@@ -12,7 +12,8 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Product details: tick **Image**, **Brand**, **SKU** and **UPC** independently.
   - The brand comes from Products → Brands, Perfect Brands, or a `brand` attribute.
   - The UPC comes from WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to the `quivers_upc` meta.
-- Three layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page) and **Large cards** (9 per page).
+- Four layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page), **Large cards** (9 per page) and **Price list**.
+- **Price list** layout: one table per category (black category band with the edition, e.g. "CDN DEALER", then SKU / UPC / Brand / Description and one column per chosen price), with product pictures below each table. You choose which pictures show: hover a row and click ◩, hover a picture and click ×, or use "Show all / Hide all" per category. Drag rows or pictures to reorder (both stay in sync); picture zoom works like the cards. "Products per row" sets how many pictures per row.
 - Letter or A4, optional new page per category, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
 - **Private:** catalogues are only built in the admin. Links require a logged-in user with `manage_woocommerce` (shop managers and administrators) plus a valid nonce; anyone else gets a 403. Responses are sent with no-cache / noindex headers. Nothing is published on the front end.

@@ -14,8 +14,8 @@ class OLICG_Pricing {
 
 	public static function regions() {
 		return array(
-			'ca' => array( 'label' => __( 'Canada', 'oli-catalog-generator' ), 'currency' => 'CAD' ),
-			'us' => array( 'label' => __( 'United States', 'oli-catalog-generator' ), 'currency' => 'USD' ),
+			'ca' => array( 'label' => __( 'Canada', 'oli-catalog-generator' ), 'short' => __( 'CDN', 'oli-catalog-generator' ), 'currency' => 'CAD' ),
+			'us' => array( 'label' => __( 'United States', 'oli-catalog-generator' ), 'short' => __( 'USA', 'oli-catalog-generator' ), 'currency' => 'USD' ),
 		);
 	}
 
@@ -147,11 +147,11 @@ class OLICG_Pricing {
 		return self::lowest( array( $regular, $sale ) );
 	}
 
-	public static function format( $price, $region ) {
+	public static function format( $price, $region, $symbol = true ) {
 		if ( ! $price ) {
 			return '';
 		}
-		$amount = '$' . number_format( $price['min'], 2, '.', ',' );
+		$amount = ( $symbol ? '$' : '' ) . number_format( $price['min'], 2, '.', ',' );
 		return $price['max'] > $price['min']
 			/* translators: %s: lowest variation price */
 			? sprintf( __( 'From %s', 'oli-catalog-generator' ), $amount )

@@ -39,6 +39,22 @@ $olicg_footer_css = str_replace( array( '\\', '"', '<', '>', "\n", "\r" ), array
 $olicg_layout    = isset( OLICG_Catalog::layouts()[ $settings['layout'] ] ) ? $settings['layout'] : 'compact';
 $olicg_columns   = 'list' === $olicg_layout ? 2 : max( 2, min( 'grid' === $olicg_layout ? 4 : 6, (int) $settings['columns'] ) );
 $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
+$olicg_is_table  = 'table' === $olicg_layout;
+$olicg_edition_short = trim( $regions[ $region ]['short'] . ' ' . ( $olicg_is_dealer ? __( 'Dealer', 'oli-catalog-generator' ) : ( $olicg_components ? __( 'Retail', 'oli-catalog-generator' ) : '' ) ) );
+
+/**
+ * Zoomable image box (catalogue cards and price list pictures).
+ */
+$olicg_image_box = static function ( array $item ) use ( $settings, $olicg_layout ) {
+	$fit    = OLICG_Catalog::image_fit( $settings, $olicg_layout, $item['id'] );
+	$zoomed = 1.0 !== $fit['s'] || $fit['x'] || $fit['y'];
+	?>
+	<div class="card-img" data-s="<?php echo esc_attr( sprintf( '%.3F', $fit['s'] ) ); ?>" data-x="<?php echo esc_attr( sprintf( '%.2F', $fit['x'] ) ); ?>" data-y="<?php echo esc_attr( sprintf( '%.2F', $fit['y'] ) ); ?>">
+		<img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"<?php echo $zoomed ? ' style="' . esc_attr( sprintf( 'transform: translate(%.2F%%, %.2F%%) scale(%.3F);', $fit['x'], $fit['y'], $fit['s'] ) ) . '"' : ''; ?>>
+		<span class="img-zoom" title="<?php esc_attr_e( 'Drag to zoom the image · double-click the image to reset', 'oli-catalog-generator' ); ?>" aria-hidden="true"></span>
+	</div>
+	<?php
+};
 ?><!doctype html>
 <html lang="<?php echo esc_attr( $html_lang ); ?>">
 <head>
@@ -240,12 +256,67 @@ body {
 .layout-list.no-images .card-body { padding-left: 0; }
 .no-images .card-body { border-top: 0; }
 
+/* Price list: a table per category, chosen pictures below it */
+.layout-table .section + .section { margin-top: 0.25in; }
+.pl { width: 100%; border-collapse: collapse; font: 7pt/1.25 var(--sans); }
+.pl thead { display: table-header-group; }
+.pl tr { break-inside: avoid; page-break-inside: avoid; }
+.pl-band th { background: var(--band); color: var(--band-text); padding: 5px 8px; text-align: left; }
+.pl-title { font: var(--heading-style) 700 10pt var(--sans); text-transform: uppercase; letter-spacing: .04em; }
+.pl-eyebrow { font-weight: 400; opacity: .65; }
+.pl-edition { float: right; margin-top: 2px; font: 700 8pt var(--mono); text-transform: uppercase; letter-spacing: .12em; }
+.pl-cols th {
+	background: color-mix(in srgb, var(--band) 70%, #fff); color: var(--band-text);
+	padding: 3px 6px; text-align: left; border: 1px solid var(--line);
+	font: 700 6.3pt var(--mono); text-transform: var(--label-case); letter-spacing: .1em; white-space: nowrap;
+}
+.pl td { border: 1px solid var(--line); padding: 2px 6px; vertical-align: middle; }
+.pl .c-sku, .pl .c-upc { font: 6.3pt var(--mono); white-space: nowrap; }
+.pl td.c-brand { white-space: nowrap; }
+.pl td.c-name { position: relative; width: 100%; }
+.pl .c-price { width: 0.62in; text-align: right !important; white-space: nowrap; }
+.pl td.c-price { font: 700 7pt var(--mono); color: var(--price); }
+.row-actions { position: absolute; top: 50%; right: 3px; transform: translateY(-50%); display: flex; gap: 3px; }
+.row-actions .card-remove { position: static; width: 16px; height: 16px; font-size: 11px; line-height: 16px; }
+.pic-toggle {
+	width: 16px; height: 16px; padding: 0; border: 1px solid var(--ink); border-radius: 50%;
+	background: var(--ink); color: #fff; font: 9px/14px Arial, sans-serif; text-align: center;
+	cursor: pointer; opacity: 0; transition: opacity .12s;
+}
+.row.no-pic .pic-toggle { background: #fff; color: var(--muted); border-style: dashed; }
+.row:hover .card-remove, .row:hover .pic-toggle, .pic-toggle:focus-visible { opacity: 1; }
+.pics-bar { margin-top: 4px; text-align: right; font: 7pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .08em; }
+.pics-bar button { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+.pics-bar button:hover { border-color: var(--ink); }
+.pics { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0.06in 0.12in; margin-top: 0.1in; }
+.pics:not(:has(.pic:not([hidden]))) { display: none; }
+.pic { position: relative; margin: 0; break-inside: avoid; page-break-inside: avoid; }
+.pic .card-img { aspect-ratio: 4 / 3; }
+.pic .card-img img { top: 4%; left: 4%; width: 92%; height: 92%; }
+.pic figcaption { margin-top: 2px; font: 5.8pt var(--mono); color: var(--muted); text-align: center; letter-spacing: .06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pic-remove {
+	position: absolute; top: 3px; right: 3px; z-index: 3;
+	width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%;
+	background: #000; color: #fff; font: 700 12px/18px Arial, sans-serif; text-align: center;
+	cursor: pointer; opacity: 0; transition: opacity .12s, transform .12s;
+}
+.pic:hover .pic-remove, .pic:hover .img-zoom, .pic-remove:focus-visible { opacity: 1; }
+.pic-remove:hover { transform: scale(1.15); background: #dc2626; }
+@media screen {
+	.row, .pic { cursor: grab; }
+	.row:hover td { background: #f4f4f5; }
+	.pic:hover { outline: 1px solid var(--ink); outline-offset: 1px; }
+	.row.is-dragging, .pic.is-dragging { opacity: .3; }
+	.row.is-removing, .pic.is-removing { opacity: 0; transition: opacity .2s; }
+}
+
 .closing { margin-top: 0.4in; padding-top: 12px; border-top: 1px solid var(--line); font: 7.5pt/1.6 var(--mono); color: var(--muted); break-inside: avoid; }
 .empty { font: 11pt var(--mono); color: var(--muted); padding: 40px 0; }
 
 @media print {
 	body { background: #fff; }
-	.toolbar, .card-remove, .img-zoom { display: none !important; }
+	.toolbar, .card-remove, .img-zoom, .row-actions, .pic-remove, .pics-bar { display: none !important; }
+	.row:hover td { background: none; }
 	.card-img { outline: 0 !important; }
 	.doc { width: auto; margin: 0; padding: 0; box-shadow: none; }
 }
@@ -259,7 +330,16 @@ body {
 	<div>
 		<strong><?php echo esc_html( $settings['title'] ); ?></strong>
 		· <?php echo esc_html( $olicg_edition ); ?> · <span class="js-total-label"><?php /* translators: %d: number of products */ echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
-		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
+		<div class="hint">
+			<?php
+			if ( $olicg_is_table ) {
+				esc_html_e( 'Drag rows or pictures to reorder · hover a row: ◩ shows or hides its picture, × removes the product · hover a picture: × hides it, drag its corner to zoom (double-click resets) — changes save automatically.', 'oli-catalog-generator' );
+			} else {
+				esc_html_e( 'Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically.', 'oli-catalog-generator' );
+			}
+			?>
+			<span class="status" aria-live="polite"></span>
+		</div>
 		<div class="hint"><?php esc_html_e( 'Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on.', 'oli-catalog-generator' ); ?></div>
 	</div>
 	<div class="toolbar-actions">
@@ -312,8 +392,88 @@ body {
 		<p class="empty"><?php esc_html_e( 'No products match this selection.', 'oli-catalog-generator' ); ?></p>
 	<?php endif; ?>
 
+	<?php
+	if ( $olicg_is_table ) {
+		$olicg_cols = array();
+		if ( ! empty( $settings['show_sku'] ) ) {
+			$olicg_cols['sku'] = __( 'SKU', 'oli-catalog-generator' );
+		}
+		if ( ! empty( $settings['show_upc'] ) ) {
+			$olicg_cols['upc'] = __( 'UPC', 'oli-catalog-generator' );
+		}
+		if ( ! empty( $settings['show_brand'] ) ) {
+			$olicg_cols['brand'] = __( 'Brand', 'oli-catalog-generator' );
+		}
+		$olicg_cols['name'] = __( 'Description', 'oli-catalog-generator' );
+	}
+	?>
 	<?php foreach ( $sections as $section ) : ?>
 		<section class="section">
+		<?php if ( $olicg_is_table ) : ?>
+			<table class="pl">
+				<thead>
+					<tr class="pl-band">
+						<th colspan="<?php echo (int) ( count( $olicg_cols ) + count( $olicg_components ) ); ?>">
+							<span class="pl-title">
+								<?php if ( '' !== $section['eyebrow'] ) : ?>
+									<span class="pl-eyebrow"><?php echo esc_html( $section['eyebrow'] ); ?> ›</span>
+								<?php endif; ?>
+								<?php echo esc_html( $section['title'] ); ?>
+							</span>
+							<span class="pl-edition"><?php echo esc_html( $olicg_edition_short ); ?></span>
+						</th>
+					</tr>
+					<tr class="pl-cols">
+						<?php foreach ( $olicg_cols as $olicg_key => $olicg_label ) : ?>
+							<th class="c-<?php echo esc_attr( $olicg_key ); ?>"><?php echo esc_html( $olicg_label ); ?></th>
+						<?php endforeach; ?>
+						<?php foreach ( $olicg_components as $olicg_label ) : ?>
+							<th class="c-price"><?php echo esc_html( $olicg_label ); ?></th>
+						<?php endforeach; ?>
+					</tr>
+				</thead>
+				<tbody class="rows">
+					<?php foreach ( $section['items'] as $item ) : ?>
+						<tr class="row<?php echo $item['picture'] ? '' : ' no-pic'; ?>" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>">
+							<?php foreach ( $olicg_cols as $olicg_key => $olicg_label ) : ?>
+								<td class="c-<?php echo esc_attr( $olicg_key ); ?>">
+									<?php if ( 'name' === $olicg_key ) : ?>
+										<span class="row-actions">
+											<?php if ( $olicg_show_img && $item['has_img'] ) : ?>
+												<button type="button" class="pic-toggle" title="<?php esc_attr_e( 'Show or hide this picture below the table', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Show or hide this picture below the table', 'oli-catalog-generator' ); ?>">◩</button>
+											<?php endif; ?>
+											<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
+										</span>
+									<?php endif; ?>
+									<?php echo esc_html( $item[ $olicg_key ] ); ?>
+								</td>
+							<?php endforeach; ?>
+							<?php foreach ( $olicg_components as $olicg_key => $olicg_label ) : ?>
+								<td class="c-price"><?php echo $item['prices'][ $olicg_key ] ? esc_html( OLICG_Pricing::format( $item['prices'][ $olicg_key ], $region, false ) ) : '—'; ?></td>
+							<?php endforeach; ?>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php if ( $olicg_show_img && array_filter( array_column( $section['items'], 'has_img' ) ) ) : ?>
+				<div class="pics-bar">
+					<?php esc_html_e( 'Pictures:', 'oli-catalog-generator' ); ?>
+					<button type="button" data-show="1"><?php esc_html_e( 'Show all', 'oli-catalog-generator' ); ?></button>
+					<button type="button" data-show="0"><?php esc_html_e( 'Hide all', 'oli-catalog-generator' ); ?></button>
+				</div>
+				<div class="pics">
+					<?php foreach ( $section['items'] as $item ) : ?>
+						<?php if ( $item['has_img'] ) : ?>
+							<figure class="pic" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>"<?php echo $item['picture'] ? '' : ' hidden'; ?>>
+								<button type="button" class="pic-remove" title="<?php esc_attr_e( 'Hide this picture', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Hide this picture', 'oli-catalog-generator' ); ?>">×</button>
+								<?php $olicg_image_box( $item ); ?>
+								<figcaption><?php echo esc_html( '' !== $item['sku'] ? $item['sku'] : $item['name'] ); ?></figcaption>
+							</figure>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+		<?php else : ?>
 			<header class="section-head">
 				<div>
 					<?php if ( '' !== $section['eyebrow'] ) : ?>
@@ -329,11 +489,7 @@ body {
 					<article class="card" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>">
 						<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
 						<?php if ( $olicg_show_img ) : ?>
-						<?php $olicg_fit = OLICG_Catalog::image_fit( $settings, $olicg_layout, $item['id'] ); ?>
-						<div class="card-img" data-s="<?php echo esc_attr( sprintf( '%.3F', $olicg_fit['s'] ) ); ?>" data-x="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['x'] ) ); ?>" data-y="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['y'] ) ); ?>">
-							<img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"<?php echo ( 1.0 !== $olicg_fit['s'] || $olicg_fit['x'] || $olicg_fit['y'] ) ? ' style="' . esc_attr( sprintf( 'transform: translate(%.2F%%, %.2F%%) scale(%.3F);', $olicg_fit['x'], $olicg_fit['y'], $olicg_fit['s'] ) ) . '"' : ''; ?>>
-							<span class="img-zoom" title="<?php esc_attr_e( 'Drag to zoom the image · double-click the image to reset', 'oli-catalog-generator' ); ?>" aria-hidden="true"></span>
-						</div>
+							<?php $olicg_image_box( $item ); ?>
 						<?php endif; ?>
 						<div class="card-body">
 							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $item['brand'] ) : ?>
@@ -371,6 +527,7 @@ body {
 					</article>
 				<?php endforeach; ?>
 			</div>
+		<?php endif; ?>
 		</section>
 	<?php endforeach; ?>
 
@@ -406,6 +563,7 @@ body {
 		'url'     => admin_url( 'admin-ajax.php' ),
 		'nonce'   => wp_create_nonce( 'olicg_arrange' ),
 		'layout'  => $olicg_layout,
+		'item'    => $olicg_is_table ? '.row' : '.card',
 		/* translators: %d: number of products */
 		'one'     => _n( '%d product', '%d products', 1, 'oli-catalog-generator' ),
 		/* translators: %d: number of products */
@@ -444,7 +602,7 @@ body {
 	}
 
 	function visibleCards( root ) {
-		return Array.prototype.filter.call( ( root || document ).querySelectorAll( '.card' ), function ( card ) { return ! card.hidden; } );
+		return Array.prototype.filter.call( ( root || document ).querySelectorAll( cfg.item ), function ( card ) { return ! card.hidden; } );
 	}
 	function orderKey() { return visibleCards().map( function ( card ) { return card.dataset.id; } ).join( ',' ); }
 
@@ -461,55 +619,131 @@ body {
 		undoBtn.hidden = removed.length === 0;
 	}
 
-	document.querySelectorAll( '.grid' ).forEach( function ( grid ) {
-		grid.addEventListener( 'dragstart', function ( e ) {
-			var card = e.target.closest && e.target.closest( '.card' );
-			if ( ! card ) { return; }
-			dragging = card;
-			before = orderKey();
-			card.classList.add( 'is-dragging' );
-			e.dataTransfer.effectAllowed = 'move';
-			e.dataTransfer.setData( 'text/plain', card.dataset.id );
+	function childOf( container, el ) {
+		var item = el.closest && el.closest( '[data-id]' );
+		return item && item.parentNode === container ? item : null;
+	}
+
+	function picOf( item ) {
+		var section = item.closest( '.section' );
+		return section ? section.querySelector( '.pic[data-id="' + item.dataset.id + '"]' ) : null;
+	}
+
+	// Price list: the table rows and the pictures below them share one order.
+	function mirror( container ) {
+		var section = container.closest( '.section' );
+		var rows = section.querySelector( '.rows' );
+		var pics = section.querySelector( '.pics' );
+		if ( ! rows || ! pics ) { return; }
+		if ( container === rows ) {
+			Array.prototype.forEach.call( rows.children, function ( row ) {
+				var pic = picOf( row );
+				if ( pic ) { pics.appendChild( pic ); }
+			} );
+			return;
+		}
+		var all = Array.prototype.slice.call( rows.children );
+		var picIds = Array.prototype.map.call( pics.children, function ( pic ) { return pic.dataset.id; } );
+		var slots = [];
+		var byId = {};
+		all.forEach( function ( row, i ) {
+			byId[ row.dataset.id ] = row;
+			if ( picIds.indexOf( row.dataset.id ) !== -1 ) { slots.push( i ); }
 		} );
-		grid.addEventListener( 'dragover', function ( e ) {
-			if ( ! dragging || dragging.parentNode !== grid ) { return; }
+		picIds.forEach( function ( id, k ) { all[ slots[ k ] ] = byId[ id ]; } );
+		all.forEach( function ( row ) { rows.appendChild( row ); } );
+	}
+
+	document.querySelectorAll( '.grid, .rows, .pics' ).forEach( function ( container ) {
+		container.addEventListener( 'dragstart', function ( e ) {
+			var item = childOf( container, e.target );
+			if ( ! item ) { return; }
+			dragging = item;
+			before = orderKey();
+			item.classList.add( 'is-dragging' );
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData( 'text/plain', item.dataset.id );
+		} );
+		container.addEventListener( 'dragover', function ( e ) {
+			if ( ! dragging || dragging.parentNode !== container ) { return; }
 			e.preventDefault();
-			var over = e.target.closest && e.target.closest( '.card' );
+			var over = childOf( container, e.target );
 			if ( ! over || over === dragging ) { return; }
-			var cards = Array.prototype.slice.call( grid.children );
-			if ( cards.indexOf( dragging ) < cards.indexOf( over ) ) {
+			var items = Array.prototype.slice.call( container.children );
+			if ( items.indexOf( dragging ) < items.indexOf( over ) ) {
 				over.after( dragging );
 			} else {
 				over.before( dragging );
 			}
 		} );
-		grid.addEventListener( 'drop', function ( e ) {
-			if ( dragging && dragging.parentNode === grid ) {
+		container.addEventListener( 'drop', function ( e ) {
+			if ( dragging && dragging.parentNode === container ) {
 				e.preventDefault();
 				finishDrag();
 			}
 		} );
-		grid.addEventListener( 'dragend', finishDrag );
+		container.addEventListener( 'dragend', finishDrag );
 	} );
 
 	function finishDrag() {
 		if ( ! dragging ) { return; }
+		var container = dragging.parentNode;
 		dragging.classList.remove( 'is-dragging' );
 		dragging = null;
+		mirror( container );
 		if ( orderKey() !== before ) {
 			post( { op: 'order', ids: orderKey().split( ',' ) } );
 		}
 	}
 
+	function setPicture( pic, show ) {
+		var row = document.querySelector( '.row[data-id="' + pic.dataset.id + '"]' );
+		pic.hidden = ! show;
+		if ( row ) { row.classList.toggle( 'no-pic', ! show ); }
+		return post( { op: 'picture', id: pic.dataset.id, show: show ? 1 : 0 } );
+	}
+
 	document.addEventListener( 'click', function ( e ) {
+		var bulk = e.target.closest && e.target.closest( '.pics-bar button' );
+		if ( bulk ) {
+			var show = bulk.dataset.show === '1';
+			var section = bulk.closest( '.section' );
+			var ids = [];
+			section.querySelectorAll( '.pic' ).forEach( function ( pic ) {
+				var row = section.querySelector( '.row[data-id="' + pic.dataset.id + '"]' );
+				if ( row && row.hidden ) { return; }
+				pic.hidden = ! show;
+				if ( row ) { row.classList.toggle( 'no-pic', ! show ); }
+				ids.push( pic.dataset.id );
+			} );
+			if ( ids.length ) { post( { op: 'picture', ids: ids, show: show ? 1 : 0 } ); }
+			return;
+		}
+		var toggle = e.target.closest && e.target.closest( '.pic-toggle' );
+		if ( toggle ) {
+			var togglePic = picOf( toggle.closest( '.row' ) );
+			if ( togglePic ) { setPicture( togglePic, togglePic.hidden ); }
+			return;
+		}
+		var hide = e.target.closest && e.target.closest( '.pic-remove' );
+		if ( hide ) {
+			var pic = hide.closest( '.pic' );
+			setPicture( pic, false ).then( function () {
+				removed.push( { pic: pic } );
+				updateCounts();
+			} );
+			return;
+		}
 		var btn = e.target.closest && e.target.closest( '.card-remove' );
 		if ( ! btn ) { return; }
-		var card = btn.closest( '.card' );
+		var card = btn.closest( cfg.item );
+		var cardPic = picOf( card );
 		card.classList.add( 'is-removing' );
 		post( { op: 'remove', id: card.dataset.id } ).then( function ( data ) {
 			card.hidden = true;
 			card.classList.remove( 'is-removing' );
-			removed.push( { card: card, wasAdded: data.was_added ? 1 : 0 } );
+			removed.push( { card: card, wasAdded: data.was_added ? 1 : 0, pic: cardPic, picHidden: cardPic ? cardPic.hidden : true } );
+			if ( cardPic ) { cardPic.hidden = true; }
 			updateCounts();
 		}, function () {
 			card.classList.remove( 'is-removing' );
@@ -528,7 +762,7 @@ body {
 	}
 	function saveFit( box ) {
 		var fit = fitOf( box );
-		post( { op: 'image', id: box.closest( '.card' ).dataset.id, layout: cfg.layout, s: fit.s, x: fit.x, y: fit.y } );
+		post( { op: 'image', id: box.closest( '[data-id]' ).dataset.id, layout: cfg.layout, s: fit.s, x: fit.x, y: fit.y } );
 	}
 	function clamp( v, min, max ) { return Math.min( max, Math.max( min, v ) ); }
 
@@ -537,7 +771,7 @@ body {
 		applyFit( box, fitOf( box ) );
 
 		function track( e, onMove ) {
-			var card = box.closest( '.card' );
+			var card = box.closest( '[data-id]' );
 			var target = e.target;
 			e.preventDefault();
 			e.stopPropagation();
@@ -591,7 +825,13 @@ body {
 	undoBtn.addEventListener( 'click', function () {
 		var last = removed.pop();
 		if ( ! last ) { return; }
+		if ( ! last.card ) {
+			setPicture( last.pic, true );
+			updateCounts();
+			return;
+		}
 		last.card.hidden = false;
+		if ( last.pic ) { last.pic.hidden = last.picHidden; }
 		updateCounts();
 		post( { op: 'restore', id: last.card.dataset.id, was_added: last.wasAdded } );
 	} );

@@ -17,6 +17,7 @@ class OLICG_Catalog {
 			'added'             => array(),
 			'order'             => array(),
 			'images'            => array(),
+			'pictures_hidden'   => array(),
 			'region'            => 'ca',
 			'prices'            => array( 'retail' ),
 			'language'          => '',
@@ -53,6 +54,7 @@ class OLICG_Catalog {
 			'compact' => __( 'Compact grid — small images, about 30–36 products per page', 'oli-catalog-generator' ),
 			'list'    => __( 'List — thumbnails in two columns, about 34 products per page', 'oli-catalog-generator' ),
 			'grid'    => __( 'Large cards — big images, 9 products per page', 'oli-catalog-generator' ),
+			'table'   => __( 'Price list — a table per category with the pictures you choose below it', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -78,6 +80,8 @@ class OLICG_Catalog {
 				return 'thumbnail';
 			case 'compact':
 				return 'woocommerce_thumbnail';
+			case 'table':
+				return (int) $settings['columns'] >= 5 ? 'woocommerce_thumbnail' : 'woocommerce_single';
 			default:
 				return 'woocommerce_single';
 		}
@@ -180,7 +184,8 @@ class OLICG_Catalog {
 				);
 			}
 
-			$brand = self::brand_name( $shown );
+			$brand     = self::brand_name( $shown );
+			$has_image = $shown->get_image_id() || $product->get_image_id();
 
 			$sections[ $key ]['items'][] = array(
 				'id'      => $product_id,
@@ -189,6 +194,8 @@ class OLICG_Catalog {
 				'sku'     => $product->get_sku(),
 				'upc'     => self::upc( $product ),
 				'image'   => self::image_url( $shown->get_image_id() ? $shown : $product, self::image_size( $settings ) ),
+				'picture' => $has_image && ! in_array( $product_id, array_map( 'intval', $settings['pictures_hidden'] ), true ),
+				'has_img' => (bool) $has_image,
 				'brand'   => '' !== $brand || $shown === $product ? $brand : self::brand_name( $product ),
 				'prices'  => $prices,
 			);
@@ -323,6 +330,20 @@ class OLICG_Catalog {
 		} else {
 			$settings['images'][ $layout ][ $product_id ] = array( 's' => $scale, 'x' => $x, 'y' => $y );
 		}
+		self::save_settings( $settings );
+	}
+
+	/**
+	 * Price list layout: whether the products' pictures are shown below their table.
+	 */
+	public static function set_pictures( array $product_ids, $show ) {
+		$product_ids = array_filter( array_map( 'absint', $product_ids ) );
+		$settings    = self::get_settings();
+		$hidden      = array_diff( array_map( 'intval', $settings['pictures_hidden'] ), $product_ids );
+		if ( ! $show ) {
+			$hidden = array_merge( $hidden, $product_ids );
+		}
+		$settings['pictures_hidden'] = array_values( array_unique( $hidden ) );
 		self::save_settings( $settings );
 	}
 

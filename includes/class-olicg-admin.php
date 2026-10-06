@@ -49,6 +49,12 @@ class OLICG_Admin {
 				OLICG_Catalog::restore_product( $id, ! empty( $_POST['was_added'] ) );
 				wp_send_json_success();
 				break;
+			case 'picture':
+				$ids = isset( $_POST['ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) : array( $id );
+				array_filter( $ids ) || wp_send_json_error( null, 400 );
+				OLICG_Catalog::set_pictures( $ids, ! empty( $_POST['show'] ) );
+				wp_send_json_success();
+				break;
 			case 'image':
 				$layout = isset( $_POST['layout'] ) ? sanitize_key( wp_unslash( $_POST['layout'] ) ) : '';
 				( $id && isset( OLICG_Catalog::layouts()[ $layout ] ) ) || wp_send_json_error( null, 400 );
@@ -157,6 +163,7 @@ class OLICG_Admin {
 			'added'             => $ids( 'olicg_added' ),
 			'order'             => empty( $_POST['olicg_order_changed'] ) ? $old['order'] : OLICG_Catalog::merge_order( $ids( 'olicg_order' ), $old['order'] ),
 			'images'            => $old['images'],
+			'pictures_hidden'   => $old['pictures_hidden'],
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'prices'            => OLICG_Pricing::sanitize_components( isset( $_POST['olicg_prices'] ) ? wp_unslash( $_POST['olicg_prices'] ) : array() ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_components().
 			'language'          => OLICG_I18n::sanitize_language( isset( $_POST['olicg_language'] ) ? wp_unslash( $_POST['olicg_language'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_language().
@@ -381,7 +388,7 @@ class OLICG_Admin {
 									<?php endforeach; ?>
 								</select>
 							</label>
-							<label><?php esc_html_e( 'Products per row (grids)', 'oli-catalog-generator' ); ?>
+							<label><?php esc_html_e( 'Products per row (grids) / pictures per row (price list)', 'oli-catalog-generator' ); ?>
 								<select name="olicg_columns">
 									<?php foreach ( array( 2, 3, 4, 5, 6 ) as $cols ) : ?>
 										<option value="<?php echo esc_attr( $cols ); ?>" <?php selected( (int) $settings['columns'], $cols ); ?>><?php echo esc_html( $cols ); ?></option>
