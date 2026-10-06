@@ -113,7 +113,6 @@ body {
 .card:hover .img-zoom { opacity: .85; }
 .card-img.is-zoomed img { cursor: move; }
 .card-img.is-editing { outline: 2px solid var(--ink); outline-offset: -2px; }
-.card-img.is-editing img { mix-blend-mode: normal; }
 @media screen {
 	.card { cursor: grab; }
 	.card:hover { outline: 1px solid var(--ink); outline-offset: -1px; }
@@ -166,8 +165,8 @@ body {
 /* Product grid */
 .grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0.16in; }
 .card { border: 1px solid var(--line); background: #fff; break-inside: avoid; page-break-inside: avoid; display: flex; flex-direction: column; }
-.card-img { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--tile); }
-.card-img img { position: absolute; top: 6%; left: 10%; width: 80%; height: 88%; object-fit: contain; display: block; mix-blend-mode: multiply; }
+.card-img { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--tile-bg); }
+.card-img img { position: absolute; top: 6%; left: 10%; width: 80%; height: 88%; object-fit: contain; display: block; mix-blend-mode: var(--img-blend); filter: var(--img-shadow); }
 .card-body { padding: 9px 10px 10px; display: flex; flex-direction: column; flex: 1; border-top: 1px solid var(--line); }
 .card-title {
 	font: 500 <?php echo 4 === $olicg_columns ? '8pt' : '9pt'; ?>/1.3 var(--sans); margin: 0;

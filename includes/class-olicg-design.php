@@ -20,6 +20,8 @@ class OLICG_Design {
 			'heading_italic'   => 1,
 			'heading_weight'   => 400,
 			'uppercase_labels' => 1,
+			'image_bg'         => 'blend',
+			'image_shadow'     => 'none',
 			'color_text'       => '#09090b',
 			'color_muted'      => '#71717a',
 			'color_line'       => '#e4e4e7',
@@ -36,6 +38,22 @@ class OLICG_Design {
 			'google' => __( 'Google Fonts — loaded automatically from the font names', 'oli-catalog-generator' ),
 			'url'    => __( 'Stylesheet URL — Adobe Fonts kit, self-hosted @font-face CSS, your theme’s font file…', 'oli-catalog-generator' ),
 			'system' => __( 'Installed / system fonts only (nothing is loaded)', 'oli-catalog-generator' ),
+		);
+	}
+
+	public static function image_backgrounds() {
+		return array(
+			'blend' => __( 'Blend — the image melts into the background colour (best for photos on white)', 'oli-catalog-generator' ),
+			'color' => __( 'Solid background colour behind the image (best for transparent PNGs)', 'oli-catalog-generator' ),
+			'none'  => __( 'No background — the image as is', 'oli-catalog-generator' ),
+		);
+	}
+
+	public static function image_shadows() {
+		return array(
+			'none'   => __( 'No shadow', 'oli-catalog-generator' ),
+			'soft'   => __( 'Soft drop shadow', 'oli-catalog-generator' ),
+			'strong' => __( 'Strong drop shadow', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -121,12 +139,26 @@ class OLICG_Design {
 			'--heading-style'  => $d['heading_italic'] ? 'italic' : 'normal',
 			'--heading-weight' => (int) $d['heading_weight'],
 			'--label-case'     => $d['uppercase_labels'] ? 'uppercase' : 'none',
+			'--tile-bg'        => 'none' === $d['image_bg'] ? 'transparent' : $d['color_tile'],
+			'--img-blend'      => 'blend' === $d['image_bg'] ? 'multiply' : 'normal',
+			'--img-shadow'     => self::shadow_filter( $d['image_shadow'] ),
 		);
 		$out = '';
 		foreach ( $vars as $name => $value ) {
 			$out .= "\t" . $name . ': ' . $value . ";\n";
 		}
 		return $out;
+	}
+
+	public static function shadow_filter( $shadow ) {
+		switch ( $shadow ) {
+			case 'soft':
+				return 'drop-shadow(0 3px 4px rgba(0, 0, 0, .22))';
+			case 'strong':
+				return 'drop-shadow(0 6px 8px rgba(0, 0, 0, .4))';
+			default:
+				return 'none';
+		}
 	}
 
 	public static function custom_css( ?array $d = null ) {
@@ -153,6 +185,8 @@ class OLICG_Design {
 		};
 		$source = sanitize_key( $post( 'olicg_font_source' ) );
 		$weight = absint( $post( 'olicg_heading_weight' ) );
+		$img_bg = sanitize_key( $post( 'olicg_image_bg' ) );
+		$shadow = sanitize_key( $post( 'olicg_image_shadow' ) );
 
 		$design = array(
 			'font_source'      => isset( self::font_sources()[ $source ] ) ? $source : 'google',
@@ -160,6 +194,8 @@ class OLICG_Design {
 			'heading_italic'   => '' === $post( 'olicg_heading_italic' ) ? 0 : 1,
 			'heading_weight'   => in_array( $weight, array( 300, 400, 500, 600, 700, 800 ), true ) ? $weight : 400,
 			'uppercase_labels' => '' === $post( 'olicg_uppercase_labels' ) ? 0 : 1,
+			'image_bg'         => isset( self::image_backgrounds()[ $img_bg ] ) ? $img_bg : 'blend',
+			'image_shadow'     => isset( self::image_shadows()[ $shadow ] ) ? $shadow : 'none',
 			'custom_css'       => wp_strip_all_tags( (string) $post( 'olicg_custom_css' ) ),
 		);
 		foreach ( array( 'heading', 'body', 'mono', 'pdf' ) as $role ) {
@@ -238,6 +274,21 @@ class OLICG_Design {
 							</p>
 						<?php endforeach; ?>
 					</div>
+
+					<fieldset class="olicg-choice">
+						<legend><strong><?php esc_html_e( 'Product images', 'oli-catalog-generator' ); ?></strong></legend>
+						<?php foreach ( self::image_backgrounds() as $key => $label ) : ?>
+							<label><input type="radio" name="olicg_image_bg" value="<?php echo esc_attr( $key ); ?>" <?php checked( $d['image_bg'], $key ); ?>> <?php echo esc_html( $label ); ?></label>
+						<?php endforeach; ?>
+						<label><?php esc_html_e( 'Shadow under products', 'oli-catalog-generator' ); ?>
+							<select name="olicg_image_shadow">
+								<?php foreach ( self::image_shadows() as $key => $label ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $d['image_shadow'], $key ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</label>
+						<p class="description"><?php esc_html_e( 'The background colour is the “Image background” colour above. Shadows follow the product’s outline on transparent PNGs; on photos with a white background they outline the whole photo, so use them with Blend off.', 'oli-catalog-generator' ); ?></p>
+					</fieldset>
 
 					<p>
 						<label for="olicg_custom_css"><strong><?php esc_html_e( 'Custom CSS', 'oli-catalog-generator' ); ?></strong></label><br>
