@@ -24,7 +24,17 @@
 .olicg-thumb img { width: 40px; height: 40px; object-fit: contain; background: #f6f7f7; display: block; }
 .olicg-price { font-family: ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; }
 .olicg-missing { color: #a7aaad; }
+.olicg-table .olicg-handle-col, .olicg-table .olicg-handle { width: 18px; padding-left: 6px; padding-right: 0; }
+.olicg-handle { cursor: grab; color: #a7aaad; letter-spacing: -2px; user-select: none; }
+.olicg-row:hover .olicg-handle { color: #1d2327; }
+.olicg-row.ui-sortable-helper { background: #fff; box-shadow: 0 6px 18px rgba(0,0,0,.15); display: table; }
+.olicg-row.ui-sortable-placeholder { visibility: visible !important; background: #f0f6fc !important; }
+.olicg-row-remove { visibility: hidden; margin-left: 8px; width: 20px; height: 20px; line-height: 18px; padding: 0; border: 0; border-radius: 50%; background: #000; color: #fff; font-size: 15px; cursor: pointer; vertical-align: middle; }
+.olicg-row:hover .olicg-row-remove, .olicg-row-remove:focus { visibility: visible; }
+.olicg-row.is-excluded .olicg-row-remove { background: #2271b1; transform: rotate(45deg); }
 .olicg-row.is-excluded td { opacity: .45; }
+.olicg-row.is-excluded td:has(.olicg-row-remove) { opacity: 1; }
+.olicg-row.is-excluded td:has(.olicg-row-remove) a { opacity: .45; }
 .olicg-row.is-excluded td a { text-decoration: line-through; }
 .olicg-badge { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; background: #000; color: #fff; font-weight: 700; }
 .olicg-tag { margin-left: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; background: #000; color: #fff; padding: 1px 6px; }

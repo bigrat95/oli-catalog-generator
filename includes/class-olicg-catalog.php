@@ -15,6 +15,7 @@ class OLICG_Catalog {
 			'categories'        => array(),
 			'excluded'          => array(),
 			'added'             => array(),
+			'order'             => array(),
 			'region'            => 'ca',
 			'price_type'        => 'retail',
 			'layout'            => 'compact',
@@ -135,6 +136,7 @@ class OLICG_Catalog {
 			}
 
 			$sections[ $key ]['items'][] = array(
+				'id'      => $product_id,
 				'product' => $product,
 				'name'    => $product->get_name(),
 				'sku'     => $product->get_sku(),
@@ -146,13 +148,63 @@ class OLICG_Catalog {
 
 		ksort( $sections, SORT_NATURAL | SORT_FLAG_CASE );
 		foreach ( $sections as &$section ) {
-			usort( $section['items'], static function ( $a, $b ) {
-				return strnatcasecmp( $a['name'], $b['name'] );
-			} );
+			self::sort_items( $section['items'], $settings['order'] );
 		}
 		unset( $section );
 
 		return array_values( $sections );
+	}
+
+	/**
+	 * Manually arranged products first (in their saved order), then the rest by name.
+	 *
+	 * @param array[] $items Each with 'id' and 'name'.
+	 */
+	public static function sort_items( array &$items, array $order ) {
+		$position = array_flip( array_map( 'intval', $order ) );
+		usort( $items, static function ( $a, $b ) use ( $position ) {
+			$pa = isset( $position[ $a['id'] ] ) ? $position[ $a['id'] ] : null;
+			$pb = isset( $position[ $b['id'] ] ) ? $position[ $b['id'] ] : null;
+			if ( null !== $pa && null !== $pb ) {
+				return $pa - $pb;
+			}
+			if ( null !== $pa || null !== $pb ) {
+				return null !== $pa ? -1 : 1;
+			}
+			return strnatcasecmp( $a['name'], $b['name'] );
+		} );
+	}
+
+	/**
+	 * New order: the given IDs first, then previously ordered IDs not in the list.
+	 */
+	public static function merge_order( array $ids, array $old ) {
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+		return array_values( array_merge( $ids, array_diff( array_map( 'intval', $old ), $ids ) ) );
+	}
+
+	/**
+	 * @return bool Whether the product had been added manually.
+	 */
+	public static function remove_product( $product_id ) {
+		$settings  = self::get_settings();
+		$added     = array_map( 'intval', $settings['added'] );
+		$was_added = in_array( $product_id, $added, true );
+
+		$settings['added']    = array_values( array_diff( $added, array( $product_id ) ) );
+		$settings['excluded'] = array_values( array_unique( array_merge( array_map( 'intval', $settings['excluded'] ), array( $product_id ) ) ) );
+		self::save_settings( $settings );
+
+		return $was_added;
+	}
+
+	public static function restore_product( $product_id, $was_added ) {
+		$settings             = self::get_settings();
+		$settings['excluded'] = array_values( array_diff( array_map( 'intval', $settings['excluded'] ), array( $product_id ) ) );
+		if ( $was_added ) {
+			$settings['added'] = array_values( array_unique( array_merge( array_map( 'intval', $settings['added'] ), array( $product_id ) ) ) );
+		}
+		self::save_settings( $settings );
 	}
 
 	/**

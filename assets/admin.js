@@ -26,6 +26,45 @@
 			} );
 		} );
 
+		if ( $.fn.sortable ) {
+			$( '.olicg-section' ).sortable( {
+				items: '> .olicg-row',
+				handle: '.olicg-handle',
+				axis: 'y',
+				helper: function ( event, $row ) {
+					$row.children().each( function () {
+						$( this ).width( $( this ).width() );
+					} );
+					return $row;
+				},
+				update: function () {
+					$( '.olicg-order-changed' ).val( '1' );
+				}
+			} );
+		}
+
+		$( document ).on( 'click', '.olicg-row-remove', function () {
+			var $row = $( this ).closest( '.olicg-row' );
+			var $box = $row.find( '.olicg-include' );
+			var removing = ! $row.hasClass( 'is-excluded' );
+
+			if ( $box.length ) {
+				$box.prop( 'checked', ! removing ).trigger( 'change' );
+				return;
+			}
+
+			var id = String( $row.data( 'id' ) );
+			var $select = $( '#olicg_added' );
+			if ( removing ) {
+				$row.data( 'label', $select.find( 'option[value="' + id + '"]' ).text() );
+				$select.find( 'option[value="' + id + '"]' ).remove();
+			} else {
+				$select.append( new Option( $row.data( 'label' ) || id, id, true, true ) );
+			}
+			$select.trigger( 'change' );
+			$row.toggleClass( 'is-excluded', removing );
+		} );
+
 		$( '.olicg-filter' ).on( 'input', function () {
 			var term = $.trim( this.value.toLowerCase() );
 			$( '.olicg-section' ).each( function () {

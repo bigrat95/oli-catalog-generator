@@ -17,6 +17,40 @@ class OLICG_Admin {
 		add_action( 'admin_post_olicg_render', array( __CLASS__, 'handle_render' ) );
 		add_action( 'admin_post_nopriv_olicg_render', array( __CLASS__, 'deny' ) );
 		add_action( 'admin_post_olicg_save_design', array( 'OLICG_Design', 'handle_save' ) );
+		add_action( 'wp_ajax_olicg_arrange', array( __CLASS__, 'handle_arrange' ) );
+	}
+
+	/**
+	 * Drag-and-drop order and × removal from the catalogue preview.
+	 */
+	public static function handle_arrange() {
+		if ( ! current_user_can( self::cap() ) ) {
+			wp_send_json_error( null, 403 );
+		}
+		check_ajax_referer( 'olicg_arrange' );
+
+		$op = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
+		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+
+		switch ( $op ) {
+			case 'order':
+				$settings          = OLICG_Catalog::get_settings();
+				$ids               = isset( $_POST['ids'] ) ? (array) wp_unslash( $_POST['ids'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- absint in merge_order().
+				$settings['order'] = OLICG_Catalog::merge_order( $ids, $settings['order'] );
+				OLICG_Catalog::save_settings( $settings );
+				wp_send_json_success();
+				break;
+			case 'remove':
+				$id || wp_send_json_error( null, 400 );
+				wp_send_json_success( array( 'was_added' => OLICG_Catalog::remove_product( $id ) ) );
+				break;
+			case 'restore':
+				$id || wp_send_json_error( null, 400 );
+				OLICG_Catalog::restore_product( $id, ! empty( $_POST['was_added'] ) );
+				wp_send_json_success();
+				break;
+		}
+		wp_send_json_error( null, 400 );
 	}
 
 	/**
@@ -49,20 +83,18 @@ class OLICG_Admin {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wc-enhanced-select' );
 		wp_enqueue_style( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.css', array(), OLICG_VERSION );
-		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
+		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
 	}
 
 	public static function render_url( $region, $price_type ) {
-		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'action' => 'olicg_render',
-					'region' => $region,
-					'price'  => $price_type,
-				),
-				admin_url( 'admin-post.php' )
+		return add_query_arg(
+			array(
+				'action'   => 'olicg_render',
+				'region'   => $region,
+				'price'    => $price_type,
+				'_wpnonce' => wp_create_nonce( 'olicg_render' ),
 			),
-			'olicg_render'
+			admin_url( 'admin-post.php' )
 		);
 	}
 
@@ -97,6 +129,7 @@ class OLICG_Admin {
 			'categories'        => isset( $_POST['tax_input']['product_cat'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['tax_input']['product_cat'] ) ) ) ) : array(),
 			'excluded'          => $excluded,
 			'added'             => $ids( 'olicg_added' ),
+			'order'             => empty( $_POST['olicg_order_changed'] ) ? $old['order'] : OLICG_Catalog::merge_order( $ids( 'olicg_order' ), $old['order'] ),
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'price_type'        => isset( $types[ $type ] ) ? $type : 'retail',
 			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',
@@ -201,6 +234,7 @@ class OLICG_Admin {
 		$added    = array_map( 'intval', $settings['added'] );
 		$cat_ids  = OLICG_Catalog::get_category_product_ids( $settings['categories'] );
 		$rows     = self::product_rows( array_values( array_unique( array_merge( $cat_ids, $added ) ) ), $settings['categories'], $cat_ids, $added, $excluded );
+		$order    = $settings['order'];
 		$included = count( array_filter( $rows, static function ( $row ) { return $row['included']; } ) );
 		?>
 			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition and price type, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
@@ -324,7 +358,8 @@ class OLICG_Admin {
 						</h2>
 						<input type="search" class="olicg-filter" placeholder="<?php esc_attr_e( 'Filter by name or SKU…', 'oli-catalog-generator' ); ?>">
 					</div>
-					<p class="description"><?php esc_html_e( 'Uncheck a product to remove it from the catalogue. Manually added products are removed from the “Add products manually” field above. Prices below are what each edition would print.', 'oli-catalog-generator' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Drag the ⋮⋮ handle to change the order within a category. Hover a product and click × (or uncheck it) to remove it. You can also rearrange and remove products directly on the generated catalogue. Prices below are what each edition would print.', 'oli-catalog-generator' ); ?></p>
+					<input type="hidden" name="olicg_order_changed" value="" class="olicg-order-changed">
 
 					<?php if ( ! $rows ) : ?>
 						<p><em><?php esc_html_e( 'No products yet — select categories or add products, then save.', 'oli-catalog-generator' ); ?></em></p>
@@ -332,6 +367,7 @@ class OLICG_Admin {
 						<table class="widefat striped olicg-table">
 							<thead>
 								<tr>
+									<th class="olicg-handle-col"></th>
 									<th class="check-column"></th>
 									<th></th>
 									<th><?php esc_html_e( 'Product', 'oli-catalog-generator' ); ?></th>
@@ -342,14 +378,19 @@ class OLICG_Admin {
 									<th><?php esc_html_e( 'USD dealer', 'oli-catalog-generator' ); ?></th>
 								</tr>
 							</thead>
-							<?php foreach ( self::group_rows( $rows ) as $section => $section_rows ) : ?>
+							<?php foreach ( self::group_rows( $rows, $order ) as $section => $section_rows ) : ?>
 								<tbody class="olicg-section">
 									<tr class="olicg-section-row">
+										<td></td>
 										<th class="check-column"><input type="checkbox" class="olicg-toggle-section" checked></th>
 										<td colspan="7"><strong><?php echo esc_html( $section ); ?></strong> <span class="count">(<?php echo esc_html( count( $section_rows ) ); ?>)</span></td>
 									</tr>
 									<?php foreach ( $section_rows as $row ) : ?>
-										<tr class="olicg-row<?php echo $row['included'] ? '' : ' is-excluded'; ?>" data-search="<?php echo esc_attr( strtolower( $row['name'] . ' ' . $row['sku'] ) ); ?>">
+										<tr class="olicg-row<?php echo $row['included'] ? '' : ' is-excluded'; ?>" data-id="<?php echo esc_attr( $row['id'] ); ?>" data-search="<?php echo esc_attr( strtolower( $row['name'] . ' ' . $row['sku'] ) ); ?>">
+											<td class="olicg-handle" title="<?php esc_attr_e( 'Drag to reorder', 'oli-catalog-generator' ); ?>">
+												<span aria-hidden="true">⋮⋮</span>
+												<input type="hidden" name="olicg_order[]" value="<?php echo esc_attr( $row['id'] ); ?>">
+											</td>
 											<th class="check-column">
 												<?php if ( $row['manual'] ) : ?>
 													<span class="olicg-badge" title="<?php esc_attr_e( 'Added manually', 'oli-catalog-generator' ); ?>">+</span>
@@ -362,6 +403,7 @@ class OLICG_Admin {
 											<td>
 												<a href="<?php echo esc_url( get_edit_post_link( $row['id'] ) ); ?>" target="_blank"><?php echo esc_html( $row['name'] ); ?></a>
 												<?php if ( $row['manual'] ) : ?><span class="olicg-tag"><?php esc_html_e( 'Manual', 'oli-catalog-generator' ); ?></span><?php endif; ?>
+												<button type="button" class="olicg-row-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
 											</td>
 											<td><code><?php echo esc_html( $row['sku'] ); ?></code></td>
 											<?php foreach ( array( 'ca_retail', 'ca_dealer', 'us_retail', 'us_dealer' ) as $col ) : ?>
@@ -409,16 +451,14 @@ class OLICG_Admin {
 		return $rows;
 	}
 
-	private static function group_rows( array $rows ) {
+	private static function group_rows( array $rows, array $order ) {
 		$grouped = array();
 		foreach ( $rows as $row ) {
 			$grouped[ $row['section'] ][] = $row;
 		}
 		ksort( $grouped, SORT_NATURAL | SORT_FLAG_CASE );
 		foreach ( $grouped as &$section_rows ) {
-			usort( $section_rows, static function ( $a, $b ) {
-				return strnatcasecmp( $a['name'], $b['name'] );
-			} );
+			OLICG_Catalog::sort_items( $section_rows, $order );
 		}
 		unset( $section_rows );
 		return $grouped;

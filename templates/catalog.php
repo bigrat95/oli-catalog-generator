@@ -62,6 +62,7 @@ $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; }
 body {
 	font-family: var(--sans);
@@ -86,6 +87,28 @@ body {
 	font: 700 12px var(--mono); text-transform: var(--label-case); letter-spacing: .12em;
 }
 .toolbar button:hover { background: #e4e4e7; }
+.toolbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.toolbar .undo { background: transparent; color: #fff; border: 1px solid #52525b; }
+.toolbar .undo:hover { background: #27272a; }
+.toolbar .status { color: #fff; margin-left: 6px; }
+
+/* Arranging (screen only) */
+.card { position: relative; }
+.card-remove {
+	position: absolute; top: 3px; right: 3px; z-index: 3;
+	width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%;
+	background: #000; color: #fff; font: 700 14px/20px Arial, sans-serif; text-align: center;
+	cursor: pointer; opacity: 0; transition: opacity .12s, transform .12s;
+}
+.card:hover .card-remove, .card-remove:focus-visible { opacity: 1; }
+.card-remove:hover { transform: scale(1.15); background: #dc2626; }
+.layout-list .card-remove { top: 50%; right: auto; left: -4px; margin-top: -10px; }
+@media screen {
+	.card { cursor: grab; }
+	.card:hover { outline: 1px solid var(--ink); outline-offset: -1px; }
+	.card.is-dragging { opacity: .3; outline: 2px dashed var(--ink); }
+	.card.is-removing { opacity: 0; transform: scale(.92); transition: opacity .2s, transform .2s; }
+}
 
 /* Screen preview: one long sheet at print width */
 .doc {
@@ -202,7 +225,7 @@ body {
 
 @media print {
 	body { background: #fff; }
-	.toolbar { display: none; }
+	.toolbar, .card-remove { display: none !important; }
 	.doc { width: auto; margin: 0; padding: 0; box-shadow: none; }
 }
 
@@ -214,10 +237,14 @@ body {
 <div class="toolbar">
 	<div>
 		<strong><?php echo esc_html( $settings['title'] ); ?></strong>
-		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] . ' · ' . sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?>
+		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] ); ?> · <span class="js-total-label"><?php echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
+		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
 		<div class="hint"><?php esc_html_e( 'Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on.', 'oli-catalog-generator' ); ?></div>
 	</div>
-	<button type="button" onclick="olicgPrint()"><?php esc_html_e( 'Print / Save as PDF', 'oli-catalog-generator' ); ?></button>
+	<div class="toolbar-actions">
+		<button type="button" class="undo" hidden><?php esc_html_e( 'Undo remove', 'oli-catalog-generator' ); ?></button>
+		<button type="button" onclick="olicgPrint()"><?php esc_html_e( 'Print / Save as PDF', 'oli-catalog-generator' ); ?></button>
+	</div>
 </div>
 
 <main class="doc">
@@ -243,7 +270,7 @@ body {
 		<div class="cover-band">
 			<div><div class="label"><?php esc_html_e( 'Market', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_market ); ?></div></div>
 			<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_prices_lbl . ' · ' . $currency ); ?></div></div>
-			<div><div class="label"><?php esc_html_e( 'Products', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_count ); ?></div></div>
+			<div><div class="label"><?php esc_html_e( 'Products', 'oli-catalog-generator' ); ?></div><div class="value js-total"><?php echo esc_html( $olicg_count ); ?></div></div>
 		</div>
 		<div class="cover-note">
 			<?php
@@ -272,8 +299,9 @@ body {
 
 			<div class="grid">
 				<?php foreach ( $section['items'] as $item ) : ?>
-					<article class="card">
-						<div class="card-img"><img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>"></div>
+					<article class="card" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>">
+						<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
+						<div class="card-img"><img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"></div>
 						<div class="card-body">
 							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $item['brand'] ) : ?>
 								<div class="card-brand"><?php echo esc_html( $item['brand'] ); ?></div>
@@ -326,6 +354,127 @@ body {
 </main>
 
 <script>
+( function () {
+	var cfg = <?php echo wp_json_encode( array(
+		'url'     => admin_url( 'admin-ajax.php' ),
+		'nonce'   => wp_create_nonce( 'olicg_arrange' ),
+		'one'     => __( '%d product', 'oli-catalog-generator' ),
+		'many'    => __( '%d products', 'oli-catalog-generator' ),
+		'saving'  => __( 'Saving…', 'oli-catalog-generator' ),
+		'saved'   => __( 'Saved ✓', 'oli-catalog-generator' ),
+		'failed'  => __( 'Could not save — reload and try again.', 'oli-catalog-generator' ),
+	) ); ?>;
+	var statusEl = document.querySelector( '.toolbar .status' );
+	var undoBtn = document.querySelector( '.toolbar .undo' );
+	var removed = [];
+	var dragging = null;
+	var before = '';
+
+	function status( text ) { if ( statusEl ) { statusEl.textContent = text; } }
+	function label( n ) { return ( n === 1 ? cfg.one : cfg.many ).replace( '%d', n ); }
+
+	function post( data ) {
+		var body = new URLSearchParams();
+		body.append( 'action', 'olicg_arrange' );
+		body.append( '_ajax_nonce', cfg.nonce );
+		Object.keys( data ).forEach( function ( key ) {
+			[].concat( data[ key ] ).forEach( function ( value ) {
+				body.append( Array.isArray( data[ key ] ) ? key + '[]' : key, value );
+			} );
+		} );
+		status( cfg.saving );
+		return fetch( cfg.url, { method: 'POST', credentials: 'same-origin', body: body } )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( json ) {
+				if ( ! json || ! json.success ) { throw new Error( 'save failed' ); }
+				status( cfg.saved );
+				return json.data || {};
+			} )
+			.catch( function ( err ) { status( cfg.failed ); throw err; } );
+	}
+
+	function visibleCards( root ) {
+		return Array.prototype.filter.call( ( root || document ).querySelectorAll( '.card' ), function ( card ) { return ! card.hidden; } );
+	}
+	function orderKey() { return visibleCards().map( function ( card ) { return card.dataset.id; } ).join( ',' ); }
+
+	function updateCounts() {
+		document.querySelectorAll( '.section' ).forEach( function ( section ) {
+			var n = visibleCards( section ).length;
+			section.hidden = n === 0;
+			var count = section.querySelector( '.section-count' );
+			if ( count ) { count.textContent = label( n ); }
+		} );
+		var total = visibleCards().length;
+		document.querySelectorAll( '.js-total' ).forEach( function ( el ) { el.textContent = total; } );
+		document.querySelectorAll( '.js-total-label' ).forEach( function ( el ) { el.textContent = label( total ); } );
+		undoBtn.hidden = removed.length === 0;
+	}
+
+	document.querySelectorAll( '.grid' ).forEach( function ( grid ) {
+		grid.addEventListener( 'dragstart', function ( e ) {
+			var card = e.target.closest && e.target.closest( '.card' );
+			if ( ! card ) { return; }
+			dragging = card;
+			before = orderKey();
+			card.classList.add( 'is-dragging' );
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData( 'text/plain', card.dataset.id );
+		} );
+		grid.addEventListener( 'dragover', function ( e ) {
+			if ( ! dragging || dragging.parentNode !== grid ) { return; }
+			e.preventDefault();
+			var over = e.target.closest && e.target.closest( '.card' );
+			if ( ! over || over === dragging ) { return; }
+			var cards = Array.prototype.slice.call( grid.children );
+			if ( cards.indexOf( dragging ) < cards.indexOf( over ) ) {
+				over.after( dragging );
+			} else {
+				over.before( dragging );
+			}
+		} );
+		grid.addEventListener( 'drop', function ( e ) {
+			if ( dragging && dragging.parentNode === grid ) {
+				e.preventDefault();
+				finishDrag();
+			}
+		} );
+		grid.addEventListener( 'dragend', finishDrag );
+	} );
+
+	function finishDrag() {
+		if ( ! dragging ) { return; }
+		dragging.classList.remove( 'is-dragging' );
+		dragging = null;
+		if ( orderKey() !== before ) {
+			post( { op: 'order', ids: orderKey().split( ',' ) } );
+		}
+	}
+
+	document.addEventListener( 'click', function ( e ) {
+		var btn = e.target.closest && e.target.closest( '.card-remove' );
+		if ( ! btn ) { return; }
+		var card = btn.closest( '.card' );
+		card.classList.add( 'is-removing' );
+		post( { op: 'remove', id: card.dataset.id } ).then( function ( data ) {
+			card.hidden = true;
+			card.classList.remove( 'is-removing' );
+			removed.push( { card: card, wasAdded: data.was_added ? 1 : 0 } );
+			updateCounts();
+		}, function () {
+			card.classList.remove( 'is-removing' );
+		} );
+	} );
+
+	undoBtn.addEventListener( 'click', function () {
+		var last = removed.pop();
+		if ( ! last ) { return; }
+		last.card.hidden = false;
+		updateCounts();
+		post( { op: 'restore', id: last.card.dataset.id, was_added: last.wasAdded } );
+	} );
+} )();
+
 function olicgPrint() {
 	var pending = Array.prototype.filter.call( document.images, function ( img ) { return ! img.complete; } );
 	if ( ! pending.length ) { window.print(); return; }
