@@ -6,6 +6,7 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 
 - Pick product categories (sub-categories included), untick products to remove them, add others manually.
 - Arrange products by drag and drop (on the generated catalogue, or with the ⋮⋮ handle in the admin list) and hover a product to remove it with ×. Changes on the catalogue save automatically, with Undo. Arranged products come first in their category, the rest stay alphabetical.
+- Zoom an image inside its box: hover the product and drag the corner handle of the image (bigger / smaller), then drag the image to position it. Double-click resets. Saved per layout and printed exactly as shown.
 - Canada (CAD) or United States (USD) edition.
 - End-user prices, dealer prices, or **Cost, List & MAP** (all three on each product, for dealer price lists).
 - Optional brand name above each product (Products → Brands, Perfect Brands, or a `brand` attribute).

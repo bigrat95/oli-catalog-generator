@@ -16,6 +16,7 @@ class OLICG_Catalog {
 			'excluded'          => array(),
 			'added'             => array(),
 			'order'             => array(),
+			'images'            => array(),
 			'region'            => 'ca',
 			'price_type'        => 'retail',
 			'layout'            => 'compact',
@@ -196,6 +197,34 @@ class OLICG_Catalog {
 		self::save_settings( $settings );
 
 		return $was_added;
+	}
+
+	/**
+	 * Manual image zoom/position, per layout (boxes have different shapes).
+	 *
+	 * @return array{s: float, x: float, y: float}
+	 */
+	public static function image_fit( array $settings, $layout, $product_id ) {
+		$fit = isset( $settings['images'][ $layout ][ $product_id ] ) ? (array) $settings['images'][ $layout ][ $product_id ] : array();
+		return array(
+			's' => isset( $fit['s'] ) ? (float) $fit['s'] : 1.0,
+			'x' => isset( $fit['x'] ) ? (float) $fit['x'] : 0.0,
+			'y' => isset( $fit['y'] ) ? (float) $fit['y'] : 0.0,
+		);
+	}
+
+	public static function save_image_fit( $layout, $product_id, $scale, $x, $y ) {
+		$settings = self::get_settings();
+		$scale    = round( max( 0.3, min( 5, (float) $scale ) ), 3 );
+		$x        = round( max( -150, min( 150, (float) $x ) ), 2 );
+		$y        = round( max( -150, min( 150, (float) $y ) ), 2 );
+
+		if ( 1.0 === $scale && 0.0 === $x && 0.0 === $y ) {
+			unset( $settings['images'][ $layout ][ $product_id ] );
+		} else {
+			$settings['images'][ $layout ][ $product_id ] = array( 's' => $scale, 'x' => $x, 'y' => $y );
+		}
+		self::save_settings( $settings );
 	}
 
 	public static function restore_product( $product_id, $was_added ) {

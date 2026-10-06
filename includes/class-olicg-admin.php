@@ -49,6 +49,18 @@ class OLICG_Admin {
 				OLICG_Catalog::restore_product( $id, ! empty( $_POST['was_added'] ) );
 				wp_send_json_success();
 				break;
+			case 'image':
+				$layout = isset( $_POST['layout'] ) ? sanitize_key( wp_unslash( $_POST['layout'] ) ) : '';
+				( $id && isset( OLICG_Catalog::layouts()[ $layout ] ) ) || wp_send_json_error( null, 400 );
+				OLICG_Catalog::save_image_fit(
+					$layout,
+					$id,
+					isset( $_POST['s'] ) ? (float) $_POST['s'] : 1,
+					isset( $_POST['x'] ) ? (float) $_POST['x'] : 0,
+					isset( $_POST['y'] ) ? (float) $_POST['y'] : 0
+				);
+				wp_send_json_success();
+				break;
 		}
 		wp_send_json_error( null, 400 );
 	}
@@ -130,6 +142,7 @@ class OLICG_Admin {
 			'excluded'          => $excluded,
 			'added'             => $ids( 'olicg_added' ),
 			'order'             => empty( $_POST['olicg_order_changed'] ) ? $old['order'] : OLICG_Catalog::merge_order( $ids( 'olicg_order' ), $old['order'] ),
+			'images'            => $old['images'],
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'price_type'        => isset( $types[ $type ] ) ? $type : 'retail',
 			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',

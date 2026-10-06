@@ -103,6 +103,17 @@ body {
 .card:hover .card-remove, .card-remove:focus-visible { opacity: 1; }
 .card-remove:hover { transform: scale(1.15); background: #dc2626; }
 .layout-list .card-remove { top: 50%; right: auto; left: -4px; margin-top: -10px; }
+.card-img img { transform-origin: 50% 50%; }
+.img-zoom {
+	position: absolute; right: 0; bottom: 0; z-index: 2;
+	width: 16px; height: 16px; cursor: nwse-resize; opacity: 0; transition: opacity .12s;
+	background: linear-gradient(135deg, transparent 0 45%, var(--ink) 45% 55%, transparent 55% 65%, var(--ink) 65% 75%, transparent 75%);
+	touch-action: none;
+}
+.card:hover .img-zoom { opacity: .85; }
+.card-img.is-zoomed img { cursor: move; }
+.card-img.is-editing { outline: 2px solid var(--ink); outline-offset: -2px; }
+.card-img.is-editing img { mix-blend-mode: normal; }
 @media screen {
 	.card { cursor: grab; }
 	.card:hover { outline: 1px solid var(--ink); outline-offset: -1px; }
@@ -225,7 +236,8 @@ body {
 
 @media print {
 	body { background: #fff; }
-	.toolbar, .card-remove { display: none !important; }
+	.toolbar, .card-remove, .img-zoom { display: none !important; }
+	.card-img { outline: 0 !important; }
 	.doc { width: auto; margin: 0; padding: 0; box-shadow: none; }
 }
 
@@ -238,7 +250,7 @@ body {
 	<div>
 		<strong><?php echo esc_html( $settings['title'] ); ?></strong>
 		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] ); ?> · <span class="js-total-label"><?php echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
-		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
+		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
 		<div class="hint"><?php esc_html_e( 'Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on.', 'oli-catalog-generator' ); ?></div>
 	</div>
 	<div class="toolbar-actions">
@@ -301,7 +313,11 @@ body {
 				<?php foreach ( $section['items'] as $item ) : ?>
 					<article class="card" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>">
 						<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
-						<div class="card-img"><img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"></div>
+						<?php $olicg_fit = OLICG_Catalog::image_fit( $settings, $olicg_layout, $item['id'] ); ?>
+						<div class="card-img" data-s="<?php echo esc_attr( sprintf( '%.3F', $olicg_fit['s'] ) ); ?>" data-x="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['x'] ) ); ?>" data-y="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['y'] ) ); ?>">
+							<img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"<?php echo ( 1.0 !== $olicg_fit['s'] || $olicg_fit['x'] || $olicg_fit['y'] ) ? ' style="' . esc_attr( sprintf( 'transform: translate(%.2F%%, %.2F%%) scale(%.3F);', $olicg_fit['x'], $olicg_fit['y'], $olicg_fit['s'] ) ) . '"' : ''; ?>>
+							<span class="img-zoom" title="<?php esc_attr_e( 'Drag to zoom the image · double-click the image to reset', 'oli-catalog-generator' ); ?>" aria-hidden="true"></span>
+						</div>
 						<div class="card-body">
 							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $item['brand'] ) : ?>
 								<div class="card-brand"><?php echo esc_html( $item['brand'] ); ?></div>
@@ -358,6 +374,7 @@ body {
 	var cfg = <?php echo wp_json_encode( array(
 		'url'     => admin_url( 'admin-ajax.php' ),
 		'nonce'   => wp_create_nonce( 'olicg_arrange' ),
+		'layout'  => $olicg_layout,
 		'one'     => __( '%d product', 'oli-catalog-generator' ),
 		'many'    => __( '%d products', 'oli-catalog-generator' ),
 		'saving'  => __( 'Saving…', 'oli-catalog-generator' ),
@@ -463,6 +480,78 @@ body {
 			updateCounts();
 		}, function () {
 			card.classList.remove( 'is-removing' );
+		} );
+	} );
+
+	function fitOf( box ) {
+		return { s: parseFloat( box.dataset.s ) || 1, x: parseFloat( box.dataset.x ) || 0, y: parseFloat( box.dataset.y ) || 0 };
+	}
+	function applyFit( box, fit ) {
+		box.dataset.s = fit.s;
+		box.dataset.x = fit.x;
+		box.dataset.y = fit.y;
+		box.querySelector( 'img' ).style.transform = ( fit.s === 1 && ! fit.x && ! fit.y ) ? '' : 'translate(' + fit.x + '%, ' + fit.y + '%) scale(' + fit.s + ')';
+		box.classList.toggle( 'is-zoomed', fit.s !== 1 || !! fit.x || !! fit.y );
+	}
+	function saveFit( box ) {
+		var fit = fitOf( box );
+		post( { op: 'image', id: box.closest( '.card' ).dataset.id, layout: cfg.layout, s: fit.s, x: fit.x, y: fit.y } );
+	}
+	function clamp( v, min, max ) { return Math.min( max, Math.max( min, v ) ); }
+
+	document.querySelectorAll( '.card-img' ).forEach( function ( box ) {
+		var img = box.querySelector( 'img' );
+		applyFit( box, fitOf( box ) );
+
+		function track( e, onMove ) {
+			var card = box.closest( '.card' );
+			var target = e.target;
+			e.preventDefault();
+			e.stopPropagation();
+			card.draggable = false;
+			box.classList.add( 'is-editing' );
+			try { target.setPointerCapture( e.pointerId ); } catch ( err ) {}
+			var startX = e.clientX, startY = e.clientY, start = fitOf( box );
+			function move( ev ) { onMove( ev.clientX - startX, ev.clientY - startY, start ); }
+			function up() {
+				target.removeEventListener( 'pointermove', move );
+				target.removeEventListener( 'pointerup', up );
+				target.removeEventListener( 'pointercancel', up );
+				card.draggable = true;
+				box.classList.remove( 'is-editing' );
+				var end = fitOf( box );
+				if ( end.s !== start.s || end.x !== start.x || end.y !== start.y ) { saveFit( box ); }
+			}
+			target.addEventListener( 'pointermove', move );
+			target.addEventListener( 'pointerup', up );
+			target.addEventListener( 'pointercancel', up );
+		}
+
+		box.querySelector( '.img-zoom' ).addEventListener( 'pointerdown', function ( e ) {
+			var size = Math.max( box.clientWidth, box.clientHeight );
+			track( e, function ( dx, dy, start ) {
+				var s = clamp( start.s + ( dx + dy ) / size * 1.5, 0.3, 5 );
+				applyFit( box, { s: Math.round( s * 1000 ) / 1000, x: start.x, y: start.y } );
+			} );
+		} );
+
+		img.addEventListener( 'pointerdown', function ( e ) {
+			if ( ! box.classList.contains( 'is-zoomed' ) ) { return; }
+			track( e, function ( dx, dy, start ) {
+				applyFit( box, {
+					s: start.s,
+					x: Math.round( clamp( start.x + dx / img.offsetWidth * 100, -150, 150 ) * 100 ) / 100,
+					y: Math.round( clamp( start.y + dy / img.offsetHeight * 100, -150, 150 ) * 100 ) / 100
+				} );
+			} );
+		} );
+
+		box.addEventListener( 'dblclick', function ( e ) {
+			e.preventDefault();
+			if ( box.classList.contains( 'is-zoomed' ) ) {
+				applyFit( box, { s: 1, x: 0, y: 0 } );
+				saveFit( box );
+			}
 		} );
 	} );
 
