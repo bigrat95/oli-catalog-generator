@@ -6,7 +6,8 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 
 - Pick product categories (sub-categories included), untick products to remove them, add others manually.
 - Canada (CAD) or United States (USD) edition.
-- End-user prices or dealer prices.
+- End-user prices, dealer prices, or **Cost, List & MAP** (all three on each product, for dealer price lists).
+- Optional brand name above each product (Products → Brands, Perfect Brands, or a `brand` attribute).
 - Three layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page) and **Large cards** (9 per page).
 - Letter or A4, optional new page per category, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
@@ -36,7 +37,7 @@ Requires WooCommerce. US pricing uses [Price Based on Country for WooCommerce](h
 | Canada | Lowest of regular / sale price | `_dealer_cost_cad` meta |
 | United States | Lowest of the USD zone regular / sale price | `_dealer_cost_usd` meta |
 
-Regular price = list price, sale price = MAP. When only one exists, that one is shown. Variable products show "From $X" when variation prices differ.
+Regular price = list price, sale price = MAP. When only one exists, that one is shown. The **Cost, List & MAP** option shows dealer cost, regular price and sale price separately ("—" when missing). Variable products show "From $X" when variation prices differ.
 
 ## Filters
 

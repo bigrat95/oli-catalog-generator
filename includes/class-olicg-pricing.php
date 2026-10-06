@@ -23,15 +23,50 @@ class OLICG_Pricing {
 		return array(
 			'retail' => __( 'End-user price', 'oli-catalog-generator' ),
 			'dealer' => __( 'Dealer price', 'oli-catalog-generator' ),
+			'all'    => __( 'Cost, List & MAP', 'oli-catalog-generator' ),
 		);
+	}
+
+	/**
+	 * Price lines printed for a price type: 'all' shows cost, list and MAP side by side.
+	 *
+	 * @return string[] component => label
+	 */
+	public static function components( $type ) {
+		if ( 'all' === $type ) {
+			return array(
+				'cost' => __( 'Cost', 'oli-catalog-generator' ),
+				'list' => __( 'List', 'oli-catalog-generator' ),
+				'map'  => __( 'MAP', 'oli-catalog-generator' ),
+			);
+		}
+		return array( 'dealer' === $type ? 'cost' : 'retail' => '' );
 	}
 
 	/**
 	 * @return array|null { min: float, max: float } or null when the product has no usable price.
 	 */
 	public static function get_price( WC_Product $product, $region, $type ) {
+		return self::get_component( $product, $region, 'dealer' === $type ? 'cost' : 'retail' );
+	}
+
+	/**
+	 * @return array component => { min, max } | null
+	 */
+	public static function get_prices( WC_Product $product, $region, $type ) {
+		$prices = array();
+		foreach ( array_keys( self::components( $type ) ) as $component ) {
+			$prices[ $component ] = self::get_component( $product, $region, $component );
+		}
+		return $prices;
+	}
+
+	/**
+	 * @param string $component retail (lowest of list / MAP), cost, list or map.
+	 */
+	public static function get_component( WC_Product $product, $region, $component ) {
 		if ( ! $product->is_type( 'variable' ) ) {
-			$amount = self::get_single_price( $product->get_id(), $region, $type );
+			$amount = self::get_single_component( $product->get_id(), $region, $component );
 			return null === $amount ? null : array( 'min' => $amount, 'max' => $amount );
 		}
 
@@ -40,7 +75,7 @@ class OLICG_Pricing {
 			if ( 'publish' !== get_post_status( $variation_id ) ) {
 				continue;
 			}
-			$amount = self::get_single_price( $variation_id, $region, $type );
+			$amount = self::get_single_component( $variation_id, $region, $component );
 			if ( null !== $amount ) {
 				$amounts[] = $amount;
 			}
@@ -48,7 +83,7 @@ class OLICG_Pricing {
 
 		if ( ! $amounts ) {
 			// Dealer cost may be set on the parent only.
-			$amount = self::get_single_price( $product->get_id(), $region, $type );
+			$amount = self::get_single_component( $product->get_id(), $region, $component );
 			return null === $amount ? null : array( 'min' => $amount, 'max' => $amount );
 		}
 
@@ -56,22 +91,26 @@ class OLICG_Pricing {
 	}
 
 	public static function get_single_price( $post_id, $region, $type ) {
-		if ( 'dealer' === $type ) {
+		return self::get_single_component( $post_id, $region, 'dealer' === $type ? 'cost' : 'retail' );
+	}
+
+	public static function get_single_component( $post_id, $region, $component ) {
+		if ( 'cost' === $component ) {
 			$keys = apply_filters( 'olicg_dealer_meta_keys', array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' ) );
 			return self::lowest( array( get_post_meta( $post_id, $keys[ $region ], true ) ) );
 		}
 
-		if ( 'us' === $region ) {
-			return self::lowest( array(
-				self::us_price( $post_id, '_regular_price' ),
-				self::us_price( $post_id, '_sale_price' ),
-			) );
+		$regular = 'us' === $region ? self::us_price( $post_id, '_regular_price' ) : get_post_meta( $post_id, '_regular_price', true );
+		if ( 'list' === $component ) {
+			return self::lowest( array( $regular ) );
 		}
 
-		return self::lowest( array(
-			get_post_meta( $post_id, '_regular_price', true ),
-			get_post_meta( $post_id, '_sale_price', true ),
-		) );
+		$sale = 'us' === $region ? self::us_price( $post_id, '_sale_price' ) : get_post_meta( $post_id, '_sale_price', true );
+		if ( 'map' === $component ) {
+			return self::lowest( array( $sale ) );
+		}
+
+		return self::lowest( array( $regular, $sale ) );
 	}
 
 	public static function format( $price, $region ) {

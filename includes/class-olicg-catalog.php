@@ -23,6 +23,7 @@ class OLICG_Catalog {
 			'hide_no_price'     => 1,
 			'hide_out_of_stock' => 0,
 			'show_sku'          => 1,
+			'show_brand'        => 1,
 			'section_new_page'  => 0,
 			'logo_url'          => '',
 		);
@@ -117,8 +118,8 @@ class OLICG_Catalog {
 				continue;
 			}
 
-			$price = OLICG_Pricing::get_price( $product, $region, $price_type );
-			if ( ! $price && ! empty( $settings['hide_no_price'] ) ) {
+			$prices = OLICG_Pricing::get_prices( $product, $region, $price_type );
+			if ( ! array_filter( $prices ) && ! empty( $settings['hide_no_price'] ) ) {
 				continue;
 			}
 
@@ -138,7 +139,8 @@ class OLICG_Catalog {
 				'name'    => $product->get_name(),
 				'sku'     => $product->get_sku(),
 				'image'   => self::image_url( $product, self::image_size( $settings ) ),
-				'price'   => $price,
+				'brand'   => self::brand_name( $product ),
+				'prices'  => $prices,
 			);
 		}
 
@@ -190,6 +192,24 @@ class OLICG_Catalog {
 			}
 		}
 		return implode( ' › ', $names );
+	}
+
+	/**
+	 * Brand from the product_brand taxonomy, falling back to a "brand" attribute.
+	 */
+	public static function brand_name( WC_Product $product ) {
+		$product_id = $product->is_type( 'variation' ) ? $product->get_parent_id() : $product->get_id();
+		foreach ( array( 'product_brand', 'pwb-brand', 'pa_brand' ) as $taxonomy ) {
+			if ( ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			$terms = get_the_terms( $product_id, $taxonomy );
+			if ( $terms && ! is_wp_error( $terms ) ) {
+				return html_entity_decode( implode( ', ', wp_list_pluck( $terms, 'name' ) ), ENT_QUOTES, 'UTF-8' );
+			}
+		}
+		$attribute = $product->get_attribute( 'brand' );
+		return is_string( $attribute ) ? $attribute : '';
 	}
 
 	public static function image_url( WC_Product $product, $size = 'woocommerce_single' ) {

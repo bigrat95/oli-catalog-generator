@@ -12,7 +12,12 @@ $olicg_fonts_css  = is_readable( $olicg_fonts_file )
 	? str_replace( '__FONTS__', esc_url( get_template_directory_uri() . '/assets/fonts' ), (string) file_get_contents( $olicg_fonts_file ) )
 	: '';
 
-$olicg_is_dealer = 'dealer' === $price_type;
+$olicg_is_dealer = in_array( $price_type, array( 'dealer', 'all' ), true );
+$olicg_components = OLICG_Pricing::components( $price_type );
+$olicg_multi     = count( $olicg_components ) > 1;
+$olicg_prices_lbl = $olicg_multi
+	? implode( ' · ', $olicg_components )
+	: ( 'dealer' === $price_type ? __( 'Dealer', 'oli-catalog-generator' ) : __( 'End-user', 'oli-catalog-generator' ) );
 $olicg_year      = wp_date( 'Y' );
 $olicg_date      = wp_date( 'F j, Y' );
 $olicg_count     = array_sum( array_map( static function ( $section ) { return count( $section['items'] ); }, $sections ) );
@@ -138,6 +143,12 @@ body {
 .card-price .amount { font: 700 <?php echo 4 === $olicg_columns ? '10pt' : '11.5pt'; ?> var(--mono); }
 .card-price .currency { font: 6.5pt var(--mono); color: var(--muted); letter-spacing: .12em; }
 .card-price .na { font: 7pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.card-brand { font: 700 6.5pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 3px; }
+.card-prices { margin-top: auto; padding-top: 6px; display: grid; gap: 1px; }
+.price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; border-top: 1px dotted var(--line); padding-top: 2px; }
+.price-row .lbl { font: 6.5pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+.price-row .amt { font: 700 9pt var(--mono); white-space: nowrap; }
+.price-row:first-child .amt { color: var(--ink); }
 
 /* Compact grid: small images, dense rows */
 .layout-compact .section + .section { margin-top: 0.22in; }
@@ -156,6 +167,11 @@ body {
 .layout-compact .card-price .amount { font-size: 8pt; }
 .layout-compact .card-price .currency,
 .layout-compact .card-price .na { font-size: 5pt; }
+.layout-compact .card-brand { font-size: 5pt; margin-bottom: 1px; }
+.layout-compact .card-prices { padding-top: 3px; gap: 0; }
+.layout-compact .price-row { padding-top: 1px; }
+.layout-compact .price-row .lbl { font-size: 4.8pt; letter-spacing: .08em; }
+.layout-compact .price-row .amt { font-size: 6.8pt; }
 
 /* List: thumbnail rows in two columns */
 .layout-list .section + .section { margin-top: 0.22in; }
@@ -173,6 +189,12 @@ body {
 .layout-list .card-price .amount { font-size: 8.5pt; white-space: nowrap; }
 .layout-list .card-price .currency,
 .layout-list .card-price .na { font-size: 5pt; }
+.layout-list .card-brand { font-size: 5pt; margin-bottom: 0; grid-column: 1; }
+.layout-list .card-prices { grid-column: 2; grid-row: 1 / span 3; margin: 0; padding: 0; gap: 0; min-width: 0.95in; align-content: center; }
+.layout-list .price-row { border-top: 0; padding-top: 0; }
+.layout-list .price-row .lbl { font-size: 4.8pt; }
+.layout-list .price-row .amt { font-size: 7pt; }
+.layout-list .card-price { grid-row: 1 / span 3; }
 
 .closing { margin-top: 0.4in; padding-top: 12px; border-top: 1px solid var(--line); font: 7.5pt/1.6 var(--mono); color: var(--muted); break-inside: avoid; }
 .empty { font: 11pt var(--mono); color: var(--muted); padding: 40px 0; }
@@ -217,7 +239,7 @@ body {
 
 		<div class="cover-band">
 			<div><div class="label"><?php esc_html_e( 'Market', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_market ); ?></div></div>
-			<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( ( $olicg_is_dealer ? __( 'Dealer', 'oli-catalog-generator' ) : __( 'End-user', 'oli-catalog-generator' ) ) . ' · ' . $currency ); ?></div></div>
+			<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_prices_lbl . ' · ' . $currency ); ?></div></div>
 			<div><div class="label"><?php esc_html_e( 'Products', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_count ); ?></div></div>
 		</div>
 		<div class="cover-note">
@@ -250,18 +272,33 @@ body {
 					<article class="card">
 						<div class="card-img"><img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>"></div>
 						<div class="card-body">
+							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $item['brand'] ) : ?>
+								<div class="card-brand"><?php echo esc_html( $item['brand'] ); ?></div>
+							<?php endif; ?>
 							<h3 class="card-title"><?php echo esc_html( $item['name'] ); ?></h3>
 							<?php if ( ! empty( $settings['show_sku'] ) && '' !== $item['sku'] ) : ?>
 								<div class="card-sku"><?php echo esc_html( 'SKU ' . $item['sku'] ); ?></div>
 							<?php endif; ?>
-							<div class="card-price">
-								<?php if ( $item['price'] ) : ?>
-									<span class="amount"><?php echo esc_html( OLICG_Pricing::format( $item['price'], $region ) ); ?></span>
-									<span class="currency"><?php echo esc_html( $currency ); ?></span>
-								<?php else : ?>
-									<span class="na"><?php esc_html_e( 'Price on request', 'oli-catalog-generator' ); ?></span>
-								<?php endif; ?>
-							</div>
+							<?php if ( $olicg_multi ) : ?>
+								<div class="card-prices">
+									<?php foreach ( $olicg_components as $olicg_key => $olicg_label ) : ?>
+										<div class="price-row">
+											<span class="lbl"><?php echo esc_html( $olicg_label ); ?></span>
+											<span class="amt"><?php echo $item['prices'][ $olicg_key ] ? esc_html( OLICG_Pricing::format( $item['prices'][ $olicg_key ], $region ) ) : '—'; ?></span>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							<?php else : ?>
+								<?php $olicg_price = reset( $item['prices'] ); ?>
+								<div class="card-price">
+									<?php if ( $olicg_price ) : ?>
+										<span class="amount"><?php echo esc_html( OLICG_Pricing::format( $olicg_price, $region ) ); ?></span>
+										<span class="currency"><?php echo esc_html( $currency ); ?></span>
+									<?php else : ?>
+										<span class="na"><?php esc_html_e( 'Price on request', 'oli-catalog-generator' ); ?></span>
+									<?php endif; ?>
+								</div>
+							<?php endif; ?>
 						</div>
 					</article>
 				<?php endforeach; ?>

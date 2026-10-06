@@ -91,6 +91,7 @@ class OLICG_Admin {
 			'hide_no_price'     => empty( $_POST['olicg_hide_no_price'] ) ? 0 : 1,
 			'hide_out_of_stock' => empty( $_POST['olicg_hide_out_of_stock'] ) ? 0 : 1,
 			'show_sku'          => empty( $_POST['olicg_show_sku'] ) ? 0 : 1,
+			'show_brand'        => empty( $_POST['olicg_show_brand'] ) ? 0 : 1,
 			'section_new_page'  => empty( $_POST['olicg_section_new_page'] ) ? 0 : 1,
 			'logo_url'          => isset( $_POST['olicg_logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['olicg_logo_url'] ) ) : '',
 		);
@@ -234,7 +235,7 @@ class OLICG_Admin {
 							<?php foreach ( $types as $key => $label ) : ?>
 								<label><input type="radio" name="olicg_price_type" value="<?php echo esc_attr( $key ); ?>" <?php checked( $settings['price_type'], $key ); ?>> <?php echo esc_html( $label ); ?></label>
 							<?php endforeach; ?>
-							<p class="description"><?php esc_html_e( 'End-user price = the lowest of the regular (list) and sale (MAP) prices. Dealer price = imported dealer cost.', 'oli-catalog-generator' ); ?></p>
+							<p class="description"><?php esc_html_e( 'End-user price = the lowest of the regular (list) and sale (MAP) prices. Dealer price = imported dealer cost. Cost, List & MAP = all three on each product (cost = dealer cost, list = regular price, MAP = sale price).', 'oli-catalog-generator' ); ?></p>
 						</fieldset>
 
 						<fieldset class="olicg-choice">
@@ -261,6 +262,7 @@ class OLICG_Admin {
 							</label>
 							<label><input type="checkbox" name="olicg_section_new_page" value="1" <?php checked( $settings['section_new_page'] ); ?>> <?php esc_html_e( 'Start each category on a new page', 'oli-catalog-generator' ); ?></label>
 							<label><input type="checkbox" name="olicg_show_sku" value="1" <?php checked( $settings['show_sku'] ); ?>> <?php esc_html_e( 'Show SKU', 'oli-catalog-generator' ); ?></label>
+							<label><input type="checkbox" name="olicg_show_brand" value="1" <?php checked( $settings['show_brand'] ); ?>> <?php esc_html_e( 'Show brand', 'oli-catalog-generator' ); ?></label>
 							<label><input type="checkbox" name="olicg_hide_no_price" value="1" <?php checked( $settings['hide_no_price'] ); ?>> <?php esc_html_e( 'Hide products without a price for the chosen edition', 'oli-catalog-generator' ); ?></label>
 							<label><input type="checkbox" name="olicg_hide_out_of_stock" value="1" <?php checked( $settings['hide_out_of_stock'] ); ?>> <?php esc_html_e( 'Hide out-of-stock products', 'oli-catalog-generator' ); ?></label>
 						</fieldset>
