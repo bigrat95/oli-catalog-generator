@@ -19,6 +19,7 @@ class OLICG_Catalog {
 			'images'            => array(),
 			'region'            => 'ca',
 			'price_type'        => 'retail',
+			'language'          => '',
 			'layout'            => 'compact',
 			'columns'           => 6,
 			'paper'             => 'letter',
@@ -29,6 +30,20 @@ class OLICG_Catalog {
 			'section_new_page'  => 0,
 			'logo_url'          => '',
 		);
+	}
+
+	const DEFAULT_TITLE = 'Accessories Catalogue';
+
+	/**
+	 * Catalogue title in the language being rendered ('' = current language).
+	 */
+	public static function title( array $settings, $lang = '' ) {
+		$default = __( 'Accessories Catalogue', 'oli-catalog-generator' );
+		if ( in_array( $settings['title'], array( '', self::DEFAULT_TITLE, $default ), true ) ) {
+			return $default;
+		}
+		$title = OLICG_I18n::translate_string( 'Catalogue title', (string) $settings['title'], '' !== $lang ? $lang : null );
+		return '' !== $lang ? OLICG_I18n::translate_strings( array( $title ), $lang )[0] : $title;
 	}
 
 	public static function layouts() {
@@ -73,7 +88,7 @@ class OLICG_Catalog {
 			return array();
 		}
 
-		$query = new WP_Query( array(
+		$query = new WP_Query( OLICG_I18n::query_args() + array(
 			'post_type'              => 'product',
 			'post_status'            => 'publish',
 			'posts_per_page'         => -1,
@@ -105,10 +120,19 @@ class OLICG_Catalog {
 	/**
 	 * Products grouped into sections (deepest category within the selection).
 	 *
-	 * @return array[] Each: title, eyebrow, items[] (product, name, sku, image, price).
+	 * In another language ($lang), names, categories and brands come from the
+	 * product's translation; prices, stock and the item ID stay on the selected
+	 * product so dealer costs and arrangements apply to every language.
+	 *
+	 * @return array[] Each: title, eyebrow, path[], items[] (id, product, name, sku, image, brand, prices).
 	 */
-	public static function get_sections( array $settings, $region, $price_type ) {
+	public static function get_sections( array $settings, $region, $price_type, $lang = '' ) {
 		$selected = array_map( 'intval', $settings['categories'] );
+		if ( '' !== $lang ) {
+			$selected = array_map( static function ( $term_id ) use ( $lang ) {
+				return OLICG_I18n::term_id( $term_id, $lang );
+			}, $selected );
+		}
 		$sections = array();
 
 		foreach ( self::get_product_ids( $settings ) as $product_id ) {
@@ -125,35 +149,101 @@ class OLICG_Catalog {
 				continue;
 			}
 
-			$term = self::section_term( $product_id, $selected );
+			$shown = $product;
+			if ( '' !== $lang ) {
+				$translated_id = OLICG_I18n::post_id( $product_id, $lang );
+				$translated    = $translated_id !== $product_id ? wc_get_product( $translated_id ) : null;
+				if ( $translated && 'publish' === $translated->get_status() ) {
+					$shown = $translated;
+				}
+			}
+
+			$term = self::section_term( $shown->get_id(), $selected );
 			$key  = $term ? self::term_path( $term ) : '~';
 
 			if ( ! isset( $sections[ $key ] ) ) {
+				$path             = $term ? self::term_ancestor_names( $term ) : array();
 				$sections[ $key ] = array(
 					'title'   => $term ? $term->name : __( 'Other products', 'oli-catalog-generator' ),
-					'eyebrow' => $term ? self::term_parent_path( $term ) : '',
+					'eyebrow' => implode( ' › ', $path ),
+					'path'    => $path,
+					'other'   => ! $term,
 					'items'   => array(),
 				);
 			}
 
+			$brand = self::brand_name( $shown );
+
 			$sections[ $key ]['items'][] = array(
 				'id'      => $product_id,
-				'product' => $product,
-				'name'    => $product->get_name(),
+				'product' => $shown,
+				'name'    => $shown->get_name(),
 				'sku'     => $product->get_sku(),
-				'image'   => self::image_url( $product, self::image_size( $settings ) ),
-				'brand'   => self::brand_name( $product ),
+				'image'   => self::image_url( $shown->get_image_id() ? $shown : $product, self::image_size( $settings ) ),
+				'brand'   => '' !== $brand || $shown === $product ? $brand : self::brand_name( $product ),
 				'prices'  => $prices,
 			);
 		}
 
 		ksort( $sections, SORT_NATURAL | SORT_FLAG_CASE );
+		$sections = array_values( $sections );
+
+		if ( '' !== $lang ) {
+			$sections = self::translate_section_strings( $sections, $lang );
+		}
+
 		foreach ( $sections as &$section ) {
 			self::sort_items( $section['items'], $settings['order'] );
 		}
 		unset( $section );
 
-		return array_values( $sections );
+		return $sections;
+	}
+
+	/**
+	 * Text that isn't stored as a translated post (TranslatePress, qTranslate, filters).
+	 */
+	private static function translate_section_strings( array $sections, $lang ) {
+		$strings = array();
+		foreach ( $sections as $s => $section ) {
+			$strings[ "s$s" ] = $section['title'];
+			foreach ( $section['path'] as $p => $name ) {
+				$strings[ "s$s-p$p" ] = $name;
+			}
+			foreach ( $section['items'] as $i => $item ) {
+				$strings[ "s$s-i$i-n" ] = $item['name'];
+				$strings[ "s$s-i$i-b" ] = $item['brand'];
+			}
+		}
+
+		$strings = OLICG_I18n::translate_strings( $strings, $lang );
+
+		foreach ( $sections as $s => &$section ) {
+			$section['title'] = $strings[ "s$s" ];
+			foreach ( $section['path'] as $p => &$name ) {
+				$name = $strings[ "s$s-p$p" ];
+			}
+			unset( $name );
+			$section['eyebrow'] = implode( ' › ', $section['path'] );
+			foreach ( $section['items'] as $i => &$item ) {
+				$item['name']  = $strings[ "s$s-i$i-n" ];
+				$item['brand'] = $strings[ "s$s-i$i-b" ];
+			}
+			unset( $item );
+		}
+		unset( $section );
+
+		usort( $sections, static function ( $a, $b ) {
+			if ( $a['other'] !== $b['other'] ) {
+				return $a['other'] ? 1 : -1;
+			}
+			return strnatcasecmp(
+				remove_accents( implode( ' › ', array_merge( $a['path'], array( $a['title'] ) ) ) ),
+				remove_accents( implode( ' › ', array_merge( $b['path'], array( $b['title'] ) ) ) )
+			);
+		} );
+
+		return $sections;
 	}
 
 	/**
@@ -172,7 +262,7 @@ class OLICG_Catalog {
 			if ( null !== $pa || null !== $pb ) {
 				return null !== $pa ? -1 : 1;
 			}
-			return strnatcasecmp( $a['name'], $b['name'] );
+			return strnatcasecmp( remove_accents( $a['name'] ), remove_accents( $b['name'] ) );
 		} );
 	}
 
@@ -265,6 +355,10 @@ class OLICG_Catalog {
 	}
 
 	private static function term_parent_path( WP_Term $term ) {
+		return implode( ' › ', self::term_ancestor_names( $term ) );
+	}
+
+	private static function term_ancestor_names( WP_Term $term ) {
 		$names = array();
 		foreach ( array_reverse( get_ancestors( $term->term_id, 'product_cat', 'taxonomy' ) ) as $ancestor_id ) {
 			$ancestor = get_term( $ancestor_id, 'product_cat' );
@@ -272,7 +366,7 @@ class OLICG_Catalog {
 				$names[] = $ancestor->name;
 			}
 		}
-		return implode( ' › ', $names );
+		return $names;
 	}
 
 	/**

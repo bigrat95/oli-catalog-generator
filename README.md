@@ -35,6 +35,31 @@ Off by default. Enable it in **WooCommerce → Catalog & Product PDF → Product
 - Footer bar: optional icon and three lines (e.g. "MADE IN" / "CANADA" / "Since 1972"), site address and a disclaimer.
 - Button style: dark, light, or your theme's button style.
 
+## Multilingual
+
+Works with **WPML**, **Polylang**, **TranslatePress** and **qTranslate-XT**, and with any other translation plugin through filters.
+
+- **Plugin texts**: fully translatable (`languages/oli-catalog-generator.pot`). French (`fr_FR`, `fr_CA`) is included. Other languages can be added with Loco Translate, WPML String Translation, or files in `wp-content/languages/plugins/`.
+- **Catalogue language**: when a multilingual plugin is active, the Edition card gets a **Language** choice, and Quick generate has a row per language. The catalogue then uses that language for:
+  - product names, categories and brands:
+    - WPML / Polylang: the translated products and categories;
+    - TranslatePress: its translation dictionary;
+    - qTranslate: the language tags;
+  - labels, dates and the default title, which follow the language's locale.
+
+  Prices, stock, order, removed products and image zoom come from the selected products, so one arrangement serves every language. The catalogue still renders only in the admin.
+- **Custom texts**: a custom catalogue title, plus the PDF button label, footer lines and disclaimer, are registered in WPML String Translation and Polylang → Languages → Translations. TranslatePress translates them on the page like any other text. Default texts follow the visitor's language automatically.
+- **Product PDF**:
+  - the button and sheet are rendered on the product page, so they show the translated product;
+  - SKU and site address are marked as non-translatable;
+  - `wpml-config.xml` makes the shortcode `label` translatable and copies the dealer cost fields to translations (read by WPML and Polylang).
+- **Other plugins**:
+  - `olicg_languages` — add languages (`code => [ 'label' => …, 'locale' => … ]`);
+  - `olicg_translate_post_id` / `olicg_translate_term_id` — map products and categories to their translations;
+  - `olicg_translate_strings` — translate catalogue texts (names, categories, brands, title);
+  - `olicg_translate_string` — translate custom setting texts;
+  - `olicg_switch_language` / `olicg_restore_language` — actions to switch your plugin's language while a catalogue renders.
+
 ## Installation
 
 1. Download this repository as a ZIP (**Code → Download ZIP**) and rename the folder inside to `oli-catalog-generator` if needed.

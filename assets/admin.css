@@ -11,6 +11,7 @@
 .olicg-choice select { margin-left: 6px; }
 .olicg-actions { display: flex; gap: 8px; margin-top: 18px; }
 .olicg-quick .button { margin: 6px 6px 0 0; }
+.olicg-quick-lang { display: inline-block; min-width: 72px; margin-top: 6px; font-weight: 600; }
 .olicg-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: 16px; }
 .olicg-colors p { margin: 8px 0; }
 .olicg-private { border-left: 4px solid #000; background: #f6f7f7; padding: 8px 12px; max-width: 760px; }

@@ -12,7 +12,46 @@ class OLICG_Product_PDF {
 
 	const OPTION = 'olicg_pdf_settings';
 
+	const DEFAULT_LABEL      = 'Download PDF';
+	const DEFAULT_DISCLAIMER = 'All specifications subject to change without notice';
+
 	private static $rendered = array();
+
+	/**
+	 * Visitor-facing texts: [ source default, translated default ] per setting
+	 * (footer lines have no default).
+	 */
+	private static function texts() {
+		return array(
+			'label'        => array( self::DEFAULT_LABEL, __( 'Download PDF', 'oli-catalog-generator' ), 'PDF button label' ),
+			'footer_line1' => array( null, null, 'PDF footer line 1' ),
+			'footer_line2' => array( null, null, 'PDF footer line 2' ),
+			'footer_line3' => array( null, null, 'PDF footer line 3' ),
+			'disclaimer'   => array( self::DEFAULT_DISCLAIMER, __( 'All specifications subject to change without notice', 'oli-catalog-generator' ), 'PDF footer disclaimer' ),
+		);
+	}
+
+	/**
+	 * Settings with the visitor-facing texts in the current language.
+	 */
+	public static function localized_settings() {
+		$settings = self::get_settings();
+		foreach ( self::texts() as $key => list( $source, $default, $name ) ) {
+			$settings[ $key ] = null === $source
+				? OLICG_I18n::translate_string( $name, $settings[ $key ] )
+				: OLICG_I18n::setting_text( $name, $settings[ $key ], $source, $default );
+		}
+		return $settings;
+	}
+
+	public static function register_strings() {
+		$settings = self::get_settings();
+		foreach ( self::texts() as $key => list( $source, $default, $name ) ) {
+			if ( ! in_array( $settings[ $key ], array( $source, $default ), true ) ) {
+				OLICG_I18n::register_string( $name, $settings[ $key ] );
+			}
+		}
+	}
 
 	public static function defaults() {
 		return array(
@@ -123,14 +162,14 @@ class OLICG_Product_PDF {
 		wp_enqueue_style( 'olicg-product-pdf' );
 		wp_enqueue_script( 'olicg-product-pdf' );
 
-		$settings = self::get_settings();
+		$settings = self::localized_settings();
 		ob_start();
 		include OLICG_PLUGIN_DIR . 'templates/product-pdf.php';
 		return self::button( $product, $label ) . ob_get_clean();
 	}
 
 	private static function button( WC_Product $product, $label ) {
-		$settings = self::get_settings();
+		$settings = self::localized_settings();
 		$label    = '' !== $label ? $label : $settings['label'];
 		$classes  = 'olicg-pdf-btn olicg-pdf-btn--' . sanitize_html_class( $settings['button_style'] );
 		if ( 'theme' === $settings['button_style'] ) {
@@ -186,11 +225,12 @@ class OLICG_Product_PDF {
 
 		$placement = sanitize_key( $text( 'olicg_pdf_placement' ) );
 		$style     = sanitize_key( $text( 'olicg_pdf_button_style' ) );
+		$texts     = self::texts();
 
 		update_option( self::OPTION, array(
 			'enabled'      => empty( $_POST['olicg_pdf_enabled'] ) ? 0 : 1,
 			'placement'    => isset( self::placements()[ $placement ] ) ? $placement : 'summary',
-			'label'        => '' !== $text( 'olicg_pdf_label' ) ? $text( 'olicg_pdf_label' ) : self::defaults()['label'],
+			'label'        => '' !== $text( 'olicg_pdf_label' ) ? OLICG_I18n::normalize_default( $text( 'olicg_pdf_label' ), $texts['label'][0], $texts['label'][1] ) : self::DEFAULT_LABEL,
 			'button_style' => isset( self::button_styles()[ $style ] ) ? $style : 'dark',
 			'logo_url'     => $url( 'olicg_pdf_logo_url' ),
 			'brand_logos'  => empty( $_POST['olicg_pdf_brand_logos'] ) ? 0 : 1,
@@ -198,8 +238,9 @@ class OLICG_Product_PDF {
 			'footer_line1' => $text( 'olicg_pdf_footer_line1' ),
 			'footer_line2' => $text( 'olicg_pdf_footer_line2' ),
 			'footer_line3' => $text( 'olicg_pdf_footer_line3' ),
-			'disclaimer'   => $text( 'olicg_pdf_disclaimer' ),
+			'disclaimer'   => OLICG_I18n::normalize_default( $text( 'olicg_pdf_disclaimer' ), $texts['disclaimer'][0], $texts['disclaimer'][1] ),
 		), false );
+		self::register_strings();
 
 		wp_safe_redirect( add_query_arg( array( 'page' => OLICG_Admin::SLUG, 'tab' => 'pdf', 'saved' => 1 ), admin_url( 'admin.php' ) ) );
 		exit;
@@ -207,6 +248,11 @@ class OLICG_Product_PDF {
 
 	public static function render_settings() {
 		$s = self::get_settings();
+		foreach ( self::texts() as $key => list( $source, $default ) ) {
+			if ( null !== $source && $s[ $key ] === $source ) {
+				$s[ $key ] = $default;
+			}
+		}
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="olicg_save_pdf">

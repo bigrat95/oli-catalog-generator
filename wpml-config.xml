@@ -1,0 +1,14 @@
+<wpml-config>
+	<custom-fields>
+		<custom-field action="copy">_dealer_cost_cad</custom-field>
+		<custom-field action="copy">_dealer_cost_usd</custom-field>
+	</custom-fields>
+	<shortcodes>
+		<shortcode>
+			<tag>oli_product_pdf</tag>
+			<attributes>
+				<attribute>label</attribute>
+			</attributes>
+		</shortcode>
+	</shortcodes>
+</wpml-config>

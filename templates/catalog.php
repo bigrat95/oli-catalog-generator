@@ -2,7 +2,7 @@
 /**
  * Printable catalogue.
  *
- * Available: $settings, $sections, $region, $price_type, $currency, $logo_url, $regions, $types.
+ * Available: $settings, $sections, $region, $price_type, $currency, $logo_url, $regions, $types, $lang, $html_lang.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -23,7 +23,8 @@ $olicg_prices_lbl = $olicg_multi
 	? implode( ' · ', $olicg_components )
 	: ( 'dealer' === $price_type ? __( 'Dealer', 'oli-catalog-generator' ) : __( 'End-user', 'oli-catalog-generator' ) );
 $olicg_year      = wp_date( 'Y' );
-$olicg_date      = wp_date( 'F j, Y' );
+/* translators: catalogue date format, see https://www.php.net/manual/datetime.format.php */
+$olicg_date      = wp_date( __( 'F j, Y', 'oli-catalog-generator' ) );
 $olicg_count     = array_sum( array_map( static function ( $section ) { return count( $section['items'] ); }, $sections ) );
 $olicg_market    = $regions[ $region ]['label'];
 $olicg_price_lbl = $olicg_is_dealer ? __( 'Dealer price list', 'oli-catalog-generator' ) : __( 'Suggested retail prices', 'oli-catalog-generator' );
@@ -33,7 +34,7 @@ $olicg_layout    = isset( OLICG_Catalog::layouts()[ $settings['layout'] ] ) ? $s
 $olicg_columns   = 'list' === $olicg_layout ? 2 : max( 2, min( 'grid' === $olicg_layout ? 4 : 6, (int) $settings['columns'] ) );
 $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 ?><!doctype html>
-<html lang="en">
+<html lang="<?php echo esc_attr( $html_lang ); ?>">
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
@@ -248,7 +249,7 @@ body {
 <div class="toolbar">
 	<div>
 		<strong><?php echo esc_html( $settings['title'] ); ?></strong>
-		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] ); ?> · <span class="js-total-label"><?php echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
+		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] ); ?> · <span class="js-total-label"><?php /* translators: %d: number of products */ echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
 		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
 		<div class="hint"><?php esc_html_e( 'Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on.', 'oli-catalog-generator' ); ?></div>
 	</div>
@@ -305,7 +306,7 @@ body {
 					<?php endif; ?>
 					<h2 class="section-title"><?php echo esc_html( $section['title'] ); ?></h2>
 				</div>
-				<div class="section-count"><?php echo esc_html( sprintf( _n( '%d product', '%d products', count( $section['items'] ), 'oli-catalog-generator' ), count( $section['items'] ) ) ); ?></div>
+				<div class="section-count"><?php /* translators: %d: number of products */ echo esc_html( sprintf( _n( '%d product', '%d products', count( $section['items'] ), 'oli-catalog-generator' ), count( $section['items'] ) ) ); ?></div>
 			</header>
 
 			<div class="grid">
@@ -374,8 +375,10 @@ body {
 		'url'     => admin_url( 'admin-ajax.php' ),
 		'nonce'   => wp_create_nonce( 'olicg_arrange' ),
 		'layout'  => $olicg_layout,
-		'one'     => __( '%d product', 'oli-catalog-generator' ),
-		'many'    => __( '%d products', 'oli-catalog-generator' ),
+		/* translators: %d: number of products */
+		'one'     => _n( '%d product', '%d products', 1, 'oli-catalog-generator' ),
+		/* translators: %d: number of products */
+		'many'    => _n( '%d product', '%d products', 2, 'oli-catalog-generator' ),
 		'saving'  => __( 'Saving…', 'oli-catalog-generator' ),
 		'saved'   => __( 'Saved ✓', 'oli-catalog-generator' ),
 		'failed'  => __( 'Could not save — reload and try again.', 'oli-catalog-generator' ),

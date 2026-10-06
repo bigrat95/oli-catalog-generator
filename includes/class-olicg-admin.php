@@ -98,16 +98,28 @@ class OLICG_Admin {
 		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
 	}
 
-	public static function render_url( $region, $price_type ) {
+	public static function render_url( $region, $price_type, $lang = '' ) {
 		return add_query_arg(
-			array(
+			array_filter( array(
 				'action'   => 'olicg_render',
 				'region'   => $region,
 				'price'    => $price_type,
+				'lang'     => $lang,
 				'_wpnonce' => wp_create_nonce( 'olicg_render' ),
-			),
+			), 'strlen' ),
 			admin_url( 'admin-post.php' )
 		);
+	}
+
+	/**
+	 * Custom texts appear in WPML String Translation / Polylang → Translations.
+	 */
+	private static function register_strings() {
+		$catalog = OLICG_Catalog::get_settings();
+		if ( ! in_array( $catalog['title'], array( OLICG_Catalog::DEFAULT_TITLE, __( 'Accessories Catalogue', 'oli-catalog-generator' ) ), true ) ) {
+			OLICG_I18n::register_string( 'Catalogue title', $catalog['title'] );
+		}
+		OLICG_Product_PDF::register_strings();
 	}
 
 	public static function handle_save() {
@@ -135,9 +147,10 @@ class OLICG_Admin {
 		$paper  = isset( $_POST['olicg_paper'] ) ? sanitize_key( wp_unslash( $_POST['olicg_paper'] ) ) : 'letter';
 		$cols   = isset( $_POST['olicg_columns'] ) ? absint( $_POST['olicg_columns'] ) : 6;
 		$layout = isset( $_POST['olicg_layout'] ) ? sanitize_key( wp_unslash( $_POST['olicg_layout'] ) ) : 'compact';
+		$title  = isset( $_POST['olicg_title'] ) ? sanitize_text_field( wp_unslash( $_POST['olicg_title'] ) ) : '';
 
 		$settings = array(
-			'title'             => isset( $_POST['olicg_title'] ) ? sanitize_text_field( wp_unslash( $_POST['olicg_title'] ) ) : '',
+			'title'             => OLICG_I18n::normalize_default( $title, OLICG_Catalog::DEFAULT_TITLE, __( 'Accessories Catalogue', 'oli-catalog-generator' ) ),
 			'categories'        => isset( $_POST['tax_input']['product_cat'] ) ? array_values( array_filter( array_map( 'absint', (array) wp_unslash( $_POST['tax_input']['product_cat'] ) ) ) ) : array(),
 			'excluded'          => $excluded,
 			'added'             => $ids( 'olicg_added' ),
@@ -145,6 +158,7 @@ class OLICG_Admin {
 			'images'            => $old['images'],
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'price_type'        => isset( $types[ $type ] ) ? $type : 'retail',
+			'language'          => OLICG_I18n::sanitize_language( isset( $_POST['olicg_language'] ) ? wp_unslash( $_POST['olicg_language'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_language().
 			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',
 			'columns'           => $cols >= 2 && $cols <= 6 ? $cols : 6,
 			'paper'             => in_array( $paper, array( 'letter', 'a4' ), true ) ? $paper : 'letter',
@@ -156,13 +170,14 @@ class OLICG_Admin {
 			'logo_url'          => isset( $_POST['olicg_logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['olicg_logo_url'] ) ) : '',
 		);
 		if ( '' === $settings['title'] ) {
-			$settings['title'] = OLICG_Catalog::defaults()['title'];
+			$settings['title'] = OLICG_Catalog::DEFAULT_TITLE;
 		}
 
 		OLICG_Catalog::save_settings( $settings );
+		self::register_strings();
 
 		if ( isset( $_POST['olicg_generate'] ) ) {
-			wp_safe_redirect( self::render_url( $settings['region'], $settings['price_type'] ) );
+			wp_safe_redirect( self::render_url( $settings['region'], $settings['price_type'], $settings['language'] ) );
 			exit;
 		}
 
@@ -176,15 +191,22 @@ class OLICG_Admin {
 		}
 		check_admin_referer( 'olicg_render' );
 
-		$settings   = OLICG_Catalog::get_settings();
-		$regions    = OLICG_Pricing::regions();
+		$settings = OLICG_Catalog::get_settings();
+		$lang     = OLICG_I18n::sanitize_language( isset( $_GET['lang'] ) ? wp_unslash( $_GET['lang'] ) : $settings['language'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_language().
+
+		// Everything below (labels, dates, product texts) renders in the catalogue language.
+		OLICG_I18n::switch_to( $lang );
+
+		$settings['title'] = OLICG_Catalog::title( $settings, $lang );
+		$html_lang         = str_replace( '_', '-', '' !== $lang ? OLICG_I18n::locale( $lang ) : determine_locale() );
+		$regions           = OLICG_Pricing::regions();
 		$types      = OLICG_Pricing::price_types();
 		$region     = isset( $_GET['region'] ) ? sanitize_key( wp_unslash( $_GET['region'] ) ) : $settings['region'];
 		$price_type = isset( $_GET['price'] ) ? sanitize_key( wp_unslash( $_GET['price'] ) ) : $settings['price_type'];
 		$region     = isset( $regions[ $region ] ) ? $region : 'ca';
 		$price_type = isset( $types[ $price_type ] ) ? $price_type : 'retail';
 
-		$sections = OLICG_Catalog::get_sections( $settings, $region, $price_type );
+		$sections = OLICG_Catalog::get_sections( $settings, $region, $price_type, $lang );
 		$currency = $regions[ $region ]['currency'];
 		$logo_url = OLICG_Catalog::logo_url( $settings );
 
@@ -198,6 +220,7 @@ class OLICG_Admin {
 		header( 'X-Frame-Options: SAMEORIGIN' );
 		header( 'Content-Type: text/html; charset=UTF-8' );
 		include OLICG_PLUGIN_DIR . 'templates/catalog.php';
+		OLICG_I18n::restore();
 		exit;
 	}
 
@@ -209,6 +232,7 @@ class OLICG_Admin {
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'catalog';
 		$tab  = in_array( $tab, array( 'catalog', 'pdf', 'design' ), true ) ? $tab : 'catalog';
 		$base = admin_url( 'admin.php?page=' . self::SLUG );
+		self::register_strings();
 		?>
 		<div class="wrap olicg">
 			<h1><?php esc_html_e( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ); ?></h1>
@@ -247,8 +271,10 @@ class OLICG_Admin {
 		$added    = array_map( 'intval', $settings['added'] );
 		$cat_ids  = OLICG_Catalog::get_category_product_ids( $settings['categories'] );
 		$rows     = self::product_rows( array_values( array_unique( array_merge( $cat_ids, $added ) ) ), $settings['categories'], $cat_ids, $added, $excluded );
-		$order    = $settings['order'];
-		$included = count( array_filter( $rows, static function ( $row ) { return $row['included']; } ) );
+		$order     = $settings['order'];
+		$included  = count( array_filter( $rows, static function ( $row ) { return $row['included']; } ) );
+		$languages = OLICG_I18n::is_multilingual() ? OLICG_I18n::languages() : array();
+		$language  = '' !== $settings['language'] ? $settings['language'] : OLICG_I18n::default_language();
 		?>
 			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition and price type, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
 			<p class="olicg-private"><?php esc_html_e( 'Private: catalogues are only generated here in the admin. They never appear on your website, and catalogue links only open for logged-in shop managers and administrators.', 'oli-catalog-generator' ); ?></p>
@@ -263,7 +289,10 @@ class OLICG_Admin {
 
 						<p>
 							<label for="olicg_title"><strong><?php esc_html_e( 'Catalogue title', 'oli-catalog-generator' ); ?></strong></label><br>
-							<input type="text" id="olicg_title" name="olicg_title" class="regular-text" value="<?php echo esc_attr( $settings['title'] ); ?>">
+							<input type="text" id="olicg_title" name="olicg_title" class="regular-text" value="<?php echo esc_attr( OLICG_Catalog::DEFAULT_TITLE === $settings['title'] ? __( 'Accessories Catalogue', 'oli-catalog-generator' ) : $settings['title'] ); ?>">
+							<?php if ( $languages ) : ?>
+								<br><span class="description"><?php esc_html_e( 'The default title is translated automatically. A custom title can be translated in your multilingual plugin’s string translations.', 'oli-catalog-generator' ); ?></span>
+							<?php endif; ?>
 						</p>
 
 						<p><strong><?php esc_html_e( 'Categories', 'oli-catalog-generator' ); ?></strong><br>
@@ -302,6 +331,16 @@ class OLICG_Admin {
 								<label><input type="radio" name="olicg_region" value="<?php echo esc_attr( $key ); ?>" <?php checked( $settings['region'], $key ); ?>> <?php echo esc_html( $region['label'] . ' (' . $region['currency'] . ')' ); ?></label>
 							<?php endforeach; ?>
 						</fieldset>
+
+						<?php if ( $languages ) : ?>
+							<fieldset class="olicg-choice">
+								<legend><strong><?php esc_html_e( 'Language', 'oli-catalog-generator' ); ?></strong></legend>
+								<?php foreach ( $languages as $code => $lang ) : ?>
+									<label><input type="radio" name="olicg_language" value="<?php echo esc_attr( $code ); ?>" <?php checked( $language, $code ); ?>> <?php echo esc_html( $lang['label'] ); ?></label>
+								<?php endforeach; ?>
+								<p class="description"><?php esc_html_e( 'Product names, categories, brands and labels use this language’s translations. Prices, order, removed products and image zoom are shared by all languages.', 'oli-catalog-generator' ); ?></p>
+							</fieldset>
+						<?php endif; ?>
 
 						<fieldset class="olicg-choice">
 							<legend><strong><?php esc_html_e( 'Prices shown', 'oli-catalog-generator' ); ?></strong></legend>
@@ -351,10 +390,16 @@ class OLICG_Admin {
 							<button type="submit" class="button button-primary" name="olicg_generate" value="1" formtarget="_blank"><?php esc_html_e( 'Save & generate catalogue', 'oli-catalog-generator' ); ?></button>
 						</div>
 
-						<p class="olicg-quick"><strong><?php esc_html_e( 'Quick generate (saved selection):', 'oli-catalog-generator' ); ?></strong><br>
-							<?php foreach ( $regions as $rkey => $region ) : ?>
-								<?php foreach ( $types as $tkey => $label ) : ?>
-									<a class="button button-small" target="_blank" href="<?php echo esc_url( self::render_url( $rkey, $tkey ) ); ?>"><?php echo esc_html( $region['currency'] . ' · ' . $label ); ?></a>
+						<p class="olicg-quick"><strong><?php esc_html_e( 'Quick generate (saved selection):', 'oli-catalog-generator' ); ?></strong>
+							<?php foreach ( $languages ? $languages : array( '' => null ) as $code => $lang ) : ?>
+								<br>
+								<?php if ( $lang ) : ?>
+									<span class="olicg-quick-lang"><?php echo esc_html( $lang['label'] ); ?></span>
+								<?php endif; ?>
+								<?php foreach ( $regions as $rkey => $region ) : ?>
+									<?php foreach ( $types as $tkey => $label ) : ?>
+										<a class="button button-small" target="_blank" href="<?php echo esc_url( self::render_url( $rkey, $tkey, $code ) ); ?>"><?php echo esc_html( $region['currency'] . ' · ' . $label ); ?></a>
+									<?php endforeach; ?>
 								<?php endforeach; ?>
 							<?php endforeach; ?>
 						</p>

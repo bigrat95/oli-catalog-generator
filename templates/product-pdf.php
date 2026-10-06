@@ -40,7 +40,7 @@ $olicg_pdf_btext = $olicg_pdf_d['color_band_text'];
 					<div style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: <?php echo esc_attr( $olicg_pdf_ink ); ?>; line-height: 1.2;"><?php echo esc_html( $product->get_name() ); ?></div>
 
 					<?php if ( $product->get_sku() ) : ?>
-						<div style="font-size: 13px; color: <?php echo esc_attr( $olicg_pdf_muted ); ?>; margin-bottom: 20px;"><?php esc_html_e( 'sku:', 'oli-catalog-generator' ); ?> <?php echo esc_html( $product->get_sku() ); ?></div>
+						<div style="font-size: 13px; color: <?php echo esc_attr( $olicg_pdf_muted ); ?>; margin-bottom: 20px;"><?php esc_html_e( 'sku:', 'oli-catalog-generator' ); ?> <span class="notranslate" translate="no" data-no-translation><?php echo esc_html( $product->get_sku() ); ?></span></div>
 					<?php endif; ?>
 
 					<?php if ( $olicg_pdf_desc ) : ?>
@@ -105,7 +105,7 @@ $olicg_pdf_btext = $olicg_pdf_d['color_band_text'];
 					</table>
 				</td>
 				<td style="text-align: right; vertical-align: middle; width: 50%;">
-					<div style="font-size: 11px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; font-weight: 500;"><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></div>
+					<div style="font-size: 11px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; font-weight: 500;" class="notranslate" translate="no" data-no-translation><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></div>
 					<div style="font-size: 9px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; opacity: .65; margin-top: 3px;">©<?php echo esc_html( wp_date( 'Y' ) ); ?><?php echo $settings['disclaimer'] ? ' - ' . esc_html( $settings['disclaimer'] ) : ''; ?></div>
 				</td>
 			</tr>
