@@ -9,6 +9,9 @@
 .olicg-choice { margin: 0 0 16px; }
 .olicg-choice label { display: block; margin: 6px 0; }
 .olicg-choice select { margin-left: 6px; }
+.olicg-price-choice { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 460px; }
+.olicg-price-choice label { flex: 1; }
+.olicg-price-label { width: 10em; }
 .olicg-actions { display: flex; gap: 8px; margin-top: 18px; }
 .olicg-quick .button { margin: 6px 6px 0 0; }
 .olicg-quick-lang { display: inline-block; min-width: 72px; margin-top: 6px; font-weight: 600; }

@@ -20,6 +20,7 @@ class OLICG_Catalog {
 			'pictures_hidden'   => array(),
 			'region'            => 'ca',
 			'prices'            => array( 'retail' ),
+			'price_labels'      => array(),
 			'language'          => '',
 			'layout'            => 'compact',
 			'columns'           => 6,
@@ -71,7 +72,41 @@ class OLICG_Catalog {
 		unset( $saved['price_type'] );
 		$settings           = wp_parse_args( $saved, self::defaults() );
 		$settings['prices'] = OLICG_Pricing::sanitize_components( $settings['prices'] );
+		$settings['price_labels'] = self::sanitize_price_labels( $settings['price_labels'] );
 		return $settings;
+	}
+
+	/**
+	 * @return string[] component => custom label; components left empty use the default label.
+	 */
+	public static function sanitize_price_labels( $labels ) {
+		$labels   = is_array( $labels ) ? $labels : array();
+		$defaults = OLICG_Pricing::all_components();
+		$clean    = array();
+		foreach ( array_keys( $defaults ) as $key ) {
+			$value = isset( $labels[ $key ] ) && is_scalar( $labels[ $key ] ) ? trim( sanitize_text_field( (string) $labels[ $key ] ) ) : '';
+			if ( '' !== $value && $value !== $defaults[ $key ] ) {
+				$clean[ $key ] = $value;
+			}
+		}
+		return $clean;
+	}
+
+	/**
+	 * Label printed for each price component, in the language being rendered ('' = current language).
+	 *
+	 * @return string[] component => label, in print order.
+	 */
+	public static function price_labels( array $settings, $lang = '' ) {
+		$labels = OLICG_Pricing::all_components();
+		$custom = self::sanitize_price_labels( $settings['price_labels'] );
+		foreach ( $custom as $key => $value ) {
+			$custom[ $key ] = OLICG_I18n::translate_string( 'Price label: ' . $key, $value, '' !== $lang ? $lang : null );
+		}
+		if ( $custom && '' !== $lang ) {
+			$custom = array_combine( array_keys( $custom ), OLICG_I18n::translate_strings( array_values( $custom ), $lang ) );
+		}
+		return array_merge( $labels, $custom );
 	}
 
 	public static function image_size( array $settings ) {

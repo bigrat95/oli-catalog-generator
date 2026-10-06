@@ -16,7 +16,7 @@ $olicg_design    = OLICG_Design::get_settings();
 $olicg_stacks    = OLICG_Design::stacks( $olicg_design );
 $olicg_mono_css  = str_replace( array( '<', '>', '{', '}', ';' ), '', $olicg_stacks['mono'] );
 
-$olicg_components = OLICG_Pricing::components( $prices );
+$olicg_components = array_intersect_key( OLICG_Catalog::price_labels( $settings, $lang ), OLICG_Pricing::components( $prices ) );
 $olicg_is_dealer = isset( $olicg_components['cost'] );
 $olicg_multi     = count( $olicg_components ) > 1;
 $olicg_prices_lbl = implode( ' · ', $olicg_components );

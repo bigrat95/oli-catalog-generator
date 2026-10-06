@@ -128,6 +128,9 @@ class OLICG_Admin {
 		if ( ! in_array( $catalog['title'], array( OLICG_Catalog::DEFAULT_TITLE, __( 'Accessories Catalogue', 'oli-catalog-generator' ) ), true ) ) {
 			OLICG_I18n::register_string( 'Catalogue title', $catalog['title'] );
 		}
+		foreach ( $catalog['price_labels'] as $key => $label ) {
+			OLICG_I18n::register_string( 'Price label: ' . $key, $label );
+		}
 		OLICG_Product_PDF::register_strings();
 	}
 
@@ -166,6 +169,7 @@ class OLICG_Admin {
 			'pictures_hidden'   => $old['pictures_hidden'],
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'prices'            => OLICG_Pricing::sanitize_components( isset( $_POST['olicg_prices'] ) ? wp_unslash( $_POST['olicg_prices'] ) : array() ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_components().
+			'price_labels'      => OLICG_Catalog::sanitize_price_labels( isset( $_POST['olicg_price_labels'] ) ? wp_unslash( $_POST['olicg_price_labels'] ) : array() ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_price_labels().
 			'language'          => OLICG_I18n::sanitize_language( isset( $_POST['olicg_language'] ) ? wp_unslash( $_POST['olicg_language'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_language().
 			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',
 			'columns'           => $cols >= 2 && $cols <= 6 ? $cols : 6,
@@ -359,10 +363,15 @@ class OLICG_Admin {
 
 						<fieldset class="olicg-choice">
 							<legend><strong><?php esc_html_e( 'Prices shown', 'oli-catalog-generator' ); ?></strong></legend>
+							<?php $olicg_default_labels = OLICG_Pricing::all_components(); ?>
 							<?php foreach ( OLICG_Pricing::component_descriptions() as $key => $label ) : ?>
-								<label><input type="checkbox" name="olicg_prices[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['prices'], true ) ); ?>> <?php echo esc_html( $label ); ?></label>
+								<div class="olicg-price-choice">
+									<label><input type="checkbox" name="olicg_prices[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['prices'], true ) ); ?>> <?php echo esc_html( $label ); ?></label>
+									<input type="text" class="olicg-price-label" name="olicg_price_labels[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( isset( $settings['price_labels'][ $key ] ) ? $settings['price_labels'][ $key ] : '' ); ?>" placeholder="<?php echo esc_attr( $olicg_default_labels[ $key ] ); ?>" title="<?php esc_attr_e( 'Label printed in the catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: default price label, e.g. Cost */ __( 'Label printed for “%s”', 'oli-catalog-generator' ), $olicg_default_labels[ $key ] ) ); ?>">
+								</div>
 							<?php endforeach; ?>
 							<p class="description"><?php esc_html_e( 'Tick any combination — each ticked price gets its own line on every product. Leave all unticked for a catalogue without prices.', 'oli-catalog-generator' ); ?></p>
+							<p class="description"><?php esc_html_e( 'The box next to each price is the label printed in the catalogue (e.g. “Dealer”, “MSRP”, “Street”). Leave it empty to use the default shown in grey.', 'oli-catalog-generator' ); ?></p>
 						</fieldset>
 
 						<fieldset class="olicg-choice">

@@ -9,6 +9,7 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Zoom an image inside its box: hover the product and drag the corner handle of the image (bigger / smaller), then drag the image to position it. Double-click resets. Saved per layout and printed exactly as shown.
 - Canada (CAD) or United States (USD) edition.
 - Prices: tick any combination of **Cost** (dealer cost), **List** (regular price), **MAP** (sale price) and **End-user** (lowest of list and MAP). Each ticked price gets its own line, or untick all for a catalogue without prices.
+- Price labels: type your own label next to each price (e.g. "Dealer", "MSRP", "Street"); empty uses the default. Custom labels are printed on cards, table headers and the cover, and can be translated in WPML String Translation / Polylang (names "Price label: cost", …) or TranslatePress.
 - Product details: tick **Image**, **Brand**, **SKU** and **UPC** independently.
   - The brand comes from Products → Brands, Perfect Brands, or a `brand` attribute.
   - The UPC comes from WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to the `quivers_upc` meta.
