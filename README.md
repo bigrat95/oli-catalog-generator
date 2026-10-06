@@ -8,8 +8,10 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Arrange products by drag and drop (on the generated catalogue, or with the ⋮⋮ handle in the admin list) and hover a product to remove it with ×. Changes on the catalogue save automatically, with Undo. Arranged products come first in their category, the rest stay alphabetical.
 - Zoom an image inside its box: hover the product and drag the corner handle of the image (bigger / smaller), then drag the image to position it. Double-click resets. Saved per layout and printed exactly as shown.
 - Canada (CAD) or United States (USD) edition.
-- End-user prices, dealer prices, or **Cost, List & MAP** (all three on each product, for dealer price lists).
-- Optional brand name above each product (Products → Brands, Perfect Brands, or a `brand` attribute).
+- Prices: tick any combination of **Cost** (dealer cost), **List** (regular price), **MAP** (sale price) and **End-user** (lowest of list and MAP). Each ticked price gets its own line, or untick all for a catalogue without prices.
+- Product details: tick **Image**, **Brand**, **SKU** and **UPC** independently.
+  - The brand comes from Products → Brands, Perfect Brands, or a `brand` attribute.
+  - The UPC comes from WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to the `quivers_upc` meta.
 - Three layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page) and **Large cards** (9 per page).
 - Letter or A4, optional new page per category, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
@@ -75,12 +77,13 @@ Requires WooCommerce. US pricing uses [Price Based on Country for WooCommerce](h
 | Canada | Lowest of regular / sale price | `_dealer_cost_cad` meta |
 | United States | Lowest of the USD zone regular / sale price | `_dealer_cost_usd` meta |
 
-Regular price = list price, sale price = MAP. When only one exists, that one is shown. The **Cost, List & MAP** option shows dealer cost, regular price and sale price separately ("—" when missing). Variable products show "From $X" when variation prices differ.
+Regular price = list price, sale price = MAP. When only one exists, that one is shown. With several prices ticked, each product shows one labelled line per price ("—" when missing). Variable products show "From $X" when variation prices differ.
 
 ## Filters
 
 - `olicg_dealer_meta_keys` — change the dealer cost meta keys: `array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' )`.
 - `olicg_us_zone_id` — Price Based on Country zone ID for USD prices (default `usa`, falls back to the first USD zone).
+- `olicg_upc_meta_keys` / `olicg_product_upc` — where the UPC is read from, when WooCommerce's GTIN field is empty.
 - `olicg_capability` — capability required to build and view catalogues (default `manage_woocommerce`).
 - `olicg_fonts_css_file` — path to an `@font-face` CSS file used by the catalogue (default: the active theme's `assets/fonts/fonts-local.css`).
 

@@ -2,7 +2,7 @@
 /**
  * Printable catalogue.
  *
- * Available: $settings, $sections, $region, $price_type, $currency, $logo_url, $regions, $types, $lang, $html_lang.
+ * Available: $settings, $sections, $region, $prices (price components), $currency, $logo_url, $regions, $lang, $html_lang.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -16,18 +16,24 @@ $olicg_design    = OLICG_Design::get_settings();
 $olicg_stacks    = OLICG_Design::stacks( $olicg_design );
 $olicg_mono_css  = str_replace( array( '<', '>', '{', '}', ';' ), '', $olicg_stacks['mono'] );
 
-$olicg_is_dealer = in_array( $price_type, array( 'dealer', 'all' ), true );
-$olicg_components = OLICG_Pricing::components( $price_type );
+$olicg_components = OLICG_Pricing::components( $prices );
+$olicg_is_dealer = isset( $olicg_components['cost'] );
 $olicg_multi     = count( $olicg_components ) > 1;
-$olicg_prices_lbl = $olicg_multi
-	? implode( ' · ', $olicg_components )
-	: ( 'dealer' === $price_type ? __( 'Dealer', 'oli-catalog-generator' ) : __( 'End-user', 'oli-catalog-generator' ) );
+$olicg_prices_lbl = implode( ' · ', $olicg_components );
+$olicg_show_img  = ! empty( $settings['show_image'] );
 $olicg_year      = wp_date( 'Y' );
 /* translators: catalogue date format, see https://www.php.net/manual/datetime.format.php */
 $olicg_date      = wp_date( __( 'F j, Y', 'oli-catalog-generator' ) );
 $olicg_count     = array_sum( array_map( static function ( $section ) { return count( $section['items'] ); }, $sections ) );
 $olicg_market    = $regions[ $region ]['label'];
-$olicg_price_lbl = $olicg_is_dealer ? __( 'Dealer price list', 'oli-catalog-generator' ) : __( 'Suggested retail prices', 'oli-catalog-generator' );
+if ( $olicg_is_dealer ) {
+	$olicg_price_lbl = __( 'Dealer price list', 'oli-catalog-generator' );
+} elseif ( $olicg_components ) {
+	$olicg_price_lbl = __( 'Suggested retail prices', 'oli-catalog-generator' );
+} else {
+	$olicg_price_lbl = __( 'Product catalogue', 'oli-catalog-generator' );
+}
+$olicg_edition   = $olicg_market . ( $olicg_components ? ' · ' . $olicg_prices_lbl : '' );
 $olicg_footer    = sprintf( '%s — %s %s · %s · %s', get_bloginfo( 'name' ), $settings['title'], $olicg_year, $olicg_market, $currency );
 $olicg_footer_css = str_replace( array( '\\', '"', '<', '>', "\n", "\r" ), array( '\\\\', '\\"', '', '', ' ', ' ' ), wp_strip_all_tags( html_entity_decode( $olicg_footer, ENT_QUOTES, 'UTF-8' ) ) );
 $olicg_layout    = isset( OLICG_Catalog::layouts()[ $settings['layout'] ] ) ? $settings['layout'] : 'compact';
@@ -39,7 +45,7 @@ $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
-<title><?php echo esc_html( $settings['title'] . ' ' . $olicg_year . ' — ' . $olicg_market . ' (' . $types[ $price_type ] . ')' ); ?></title>
+<title><?php echo esc_html( $settings['title'] . ' ' . $olicg_year . ' — ' . $olicg_edition ); ?></title>
 <?php foreach ( OLICG_Design::font_urls( array( 'heading', 'body', 'mono' ), $olicg_design ) as $olicg_font_url ) : ?>
 <link rel="stylesheet" href="<?php echo esc_url( $olicg_font_url ); ?>">
 <?php endforeach; ?>
@@ -230,6 +236,9 @@ body {
 .layout-list .price-row .lbl { font-size: 4.8pt; }
 .layout-list .price-row .amt { font-size: 7pt; }
 .layout-list .card-price { grid-row: 1 / span 3; }
+.layout-list.no-images .card { padding: 4px 0; }
+.layout-list.no-images .card-body { padding-left: 0; }
+.no-images .card-body { border-top: 0; }
 
 .closing { margin-top: 0.4in; padding-top: 12px; border-top: 1px solid var(--line); font: 7.5pt/1.6 var(--mono); color: var(--muted); break-inside: avoid; }
 .empty { font: 11pt var(--mono); color: var(--muted); padding: 40px 0; }
@@ -244,12 +253,12 @@ body {
 <?php echo OLICG_Design::custom_css( $olicg_design ); // phpcs:ignore WordPress.Security.EscapeOutput -- tags stripped. ?>
 </style>
 </head>
-<body class="layout-<?php echo esc_attr( $olicg_layout ); ?>">
+<body class="layout-<?php echo esc_attr( $olicg_layout ); ?><?php echo $olicg_show_img ? '' : ' no-images'; ?>">
 
 <div class="toolbar">
 	<div>
 		<strong><?php echo esc_html( $settings['title'] ); ?></strong>
-		· <?php echo esc_html( $olicg_market . ' · ' . $types[ $price_type ] ); ?> · <span class="js-total-label"><?php /* translators: %d: number of products */ echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
+		· <?php echo esc_html( $olicg_edition ); ?> · <span class="js-total-label"><?php /* translators: %d: number of products */ echo esc_html( sprintf( _n( '%d product', '%d products', $olicg_count, 'oli-catalog-generator' ), $olicg_count ) ); ?></span>
 		<div class="hint"><?php esc_html_e( 'Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically.', 'oli-catalog-generator' ); ?> <span class="status" aria-live="polite"></span></div>
 		<div class="hint"><?php esc_html_e( 'Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on.', 'oli-catalog-generator' ); ?></div>
 	</div>
@@ -279,16 +288,22 @@ body {
 			<h1 class="cover-title"><?php echo esc_html( $settings['title'] ); ?><br><span class="cover-year"><?php echo esc_html( $olicg_year ); ?></span></h1>
 		</div>
 
-		<div class="cover-band">
+		<div class="cover-band"<?php echo $olicg_components ? '' : ' style="grid-template-columns: repeat(2, 1fr);"'; ?>>
 			<div><div class="label"><?php esc_html_e( 'Market', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_market ); ?></div></div>
-			<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_prices_lbl . ' · ' . $currency ); ?></div></div>
+			<?php if ( $olicg_components ) : ?>
+				<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_prices_lbl . ' · ' . $currency ); ?></div></div>
+			<?php endif; ?>
 			<div><div class="label"><?php esc_html_e( 'Products', 'oli-catalog-generator' ); ?></div><div class="value js-total"><?php echo esc_html( $olicg_count ); ?></div></div>
 		</div>
 		<div class="cover-note">
 			<?php
-			echo esc_html( $olicg_is_dealer
-				? __( 'Confidential dealer pricing — not for public distribution. Prices subject to change without notice.', 'oli-catalog-generator' )
-				: __( 'Suggested retail prices. Prices and availability subject to change without notice.', 'oli-catalog-generator' ) );
+			if ( $olicg_is_dealer ) {
+				esc_html_e( 'Confidential dealer pricing — not for public distribution. Prices subject to change without notice.', 'oli-catalog-generator' );
+			} elseif ( $olicg_components ) {
+				esc_html_e( 'Suggested retail prices. Prices and availability subject to change without notice.', 'oli-catalog-generator' );
+			} else {
+				esc_html_e( 'Specifications and availability subject to change without notice.', 'oli-catalog-generator' );
+			}
 			?>
 		</div>
 	</section>
@@ -313,11 +328,13 @@ body {
 				<?php foreach ( $section['items'] as $item ) : ?>
 					<article class="card" draggable="true" data-id="<?php echo esc_attr( $item['id'] ); ?>">
 						<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
+						<?php if ( $olicg_show_img ) : ?>
 						<?php $olicg_fit = OLICG_Catalog::image_fit( $settings, $olicg_layout, $item['id'] ); ?>
 						<div class="card-img" data-s="<?php echo esc_attr( sprintf( '%.3F', $olicg_fit['s'] ) ); ?>" data-x="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['x'] ) ); ?>" data-y="<?php echo esc_attr( sprintf( '%.2F', $olicg_fit['y'] ) ); ?>">
 							<img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['name'] ); ?>" draggable="false"<?php echo ( 1.0 !== $olicg_fit['s'] || $olicg_fit['x'] || $olicg_fit['y'] ) ? ' style="' . esc_attr( sprintf( 'transform: translate(%.2F%%, %.2F%%) scale(%.3F);', $olicg_fit['x'], $olicg_fit['y'], $olicg_fit['s'] ) ) . '"' : ''; ?>>
 							<span class="img-zoom" title="<?php esc_attr_e( 'Drag to zoom the image · double-click the image to reset', 'oli-catalog-generator' ); ?>" aria-hidden="true"></span>
 						</div>
+						<?php endif; ?>
 						<div class="card-body">
 							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $item['brand'] ) : ?>
 								<div class="card-brand"><?php echo esc_html( $item['brand'] ); ?></div>
@@ -326,7 +343,11 @@ body {
 							<?php if ( ! empty( $settings['show_sku'] ) && '' !== $item['sku'] ) : ?>
 								<div class="card-sku"><?php echo esc_html( 'SKU ' . $item['sku'] ); ?></div>
 							<?php endif; ?>
-							<?php if ( $olicg_multi ) : ?>
+							<?php if ( ! empty( $settings['show_upc'] ) && '' !== $item['upc'] ) : ?>
+								<div class="card-sku card-upc"><?php echo esc_html( 'UPC ' . $item['upc'] ); ?></div>
+							<?php endif; ?>
+							<?php if ( ! $olicg_components ) : ?>
+							<?php elseif ( $olicg_multi ) : ?>
 								<div class="card-prices">
 									<?php foreach ( $olicg_components as $olicg_key => $olicg_label ) : ?>
 										<div class="price-row">
@@ -356,14 +377,24 @@ body {
 	<?php if ( $sections ) : ?>
 		<div class="closing">
 			<?php
-			echo esc_html( sprintf(
-				/* translators: 1: site name, 2: currency, 3: date, 4: site URL */
-				__( '© %1$s. All prices in %2$s, current as of %3$s. Specifications, prices and availability subject to change without notice. %4$s', 'oli-catalog-generator' ),
-				$olicg_year . ' ' . get_bloginfo( 'name' ),
-				$currency,
-				$olicg_date,
-				wp_parse_url( home_url(), PHP_URL_HOST )
-			) );
+			if ( $olicg_components ) {
+				echo esc_html( sprintf(
+					/* translators: 1: site name, 2: currency, 3: date, 4: site URL */
+					__( '© %1$s. All prices in %2$s, current as of %3$s. Specifications, prices and availability subject to change without notice. %4$s', 'oli-catalog-generator' ),
+					$olicg_year . ' ' . get_bloginfo( 'name' ),
+					$currency,
+					$olicg_date,
+					wp_parse_url( home_url(), PHP_URL_HOST )
+				) );
+			} else {
+				echo esc_html( sprintf(
+					/* translators: 1: site name, 2: date, 3: site URL */
+					__( '© %1$s. Current as of %2$s. Specifications and availability subject to change without notice. %3$s', 'oli-catalog-generator' ),
+					$olicg_year . ' ' . get_bloginfo( 'name' ),
+					$olicg_date,
+					wp_parse_url( home_url(), PHP_URL_HOST )
+				) );
+			}
 			?>
 		</div>
 	<?php endif; ?>

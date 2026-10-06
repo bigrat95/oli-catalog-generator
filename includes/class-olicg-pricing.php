@@ -19,28 +19,62 @@ class OLICG_Pricing {
 		);
 	}
 
-	public static function price_types() {
+	/**
+	 * Price lines a catalogue can print, in print order.
+	 *
+	 * @return string[] component => short label (printed on each product)
+	 */
+	public static function all_components() {
 		return array(
-			'retail' => __( 'End-user price', 'oli-catalog-generator' ),
-			'dealer' => __( 'Dealer price', 'oli-catalog-generator' ),
-			'all'    => __( 'Cost, List & MAP', 'oli-catalog-generator' ),
+			'cost'   => __( 'Cost', 'oli-catalog-generator' ),
+			'list'   => __( 'List', 'oli-catalog-generator' ),
+			'map'    => __( 'MAP', 'oli-catalog-generator' ),
+			'retail' => __( 'End-user', 'oli-catalog-generator' ),
 		);
 	}
 
 	/**
-	 * Price lines printed for a price type: 'all' shows cost, list and MAP side by side.
-	 *
-	 * @return string[] component => label
+	 * @return string[] component => admin description
 	 */
-	public static function components( $type ) {
-		if ( 'all' === $type ) {
-			return array(
-				'cost' => __( 'Cost', 'oli-catalog-generator' ),
-				'list' => __( 'List', 'oli-catalog-generator' ),
-				'map'  => __( 'MAP', 'oli-catalog-generator' ),
-			);
+	public static function component_descriptions() {
+		return array(
+			'cost'   => __( 'Cost — dealer cost', 'oli-catalog-generator' ),
+			'list'   => __( 'List — regular price', 'oli-catalog-generator' ),
+			'map'    => __( 'MAP — sale price', 'oli-catalog-generator' ),
+			'retail' => __( 'End-user — lowest of list and MAP', 'oli-catalog-generator' ),
+		);
+	}
+
+	/**
+	 * Valid components in print order.
+	 *
+	 * @param string[]|string $selected Array or comma-separated list.
+	 * @return string[]
+	 */
+	public static function sanitize_components( $selected ) {
+		$selected = is_string( $selected ) ? explode( ',', $selected ) : (array) $selected;
+		$selected = array_map( 'sanitize_key', array_filter( $selected, 'is_scalar' ) );
+		return array_values( array_intersect( array_keys( self::all_components() ), $selected ) );
+	}
+
+	/**
+	 * Price types used before price lines could be picked individually.
+	 */
+	public static function legacy_components( $type ) {
+		switch ( $type ) {
+			case 'dealer':
+				return array( 'cost' );
+			case 'all':
+				return array( 'cost', 'list', 'map' );
 		}
-		return array( 'dealer' === $type ? 'cost' : 'retail' => '' );
+		return array( 'retail' );
+	}
+
+	/**
+	 * @return string[] component => label, for the selected components.
+	 */
+	public static function components( array $selected ) {
+		return array_intersect_key( self::all_components(), array_flip( self::sanitize_components( $selected ) ) );
 	}
 
 	/**
@@ -53,9 +87,9 @@ class OLICG_Pricing {
 	/**
 	 * @return array component => { min, max } | null
 	 */
-	public static function get_prices( WC_Product $product, $region, $type ) {
+	public static function get_prices( WC_Product $product, $region, array $components ) {
 		$prices = array();
-		foreach ( array_keys( self::components( $type ) ) as $component ) {
+		foreach ( array_keys( self::components( $components ) ) as $component ) {
 			$prices[ $component ] = self::get_component( $product, $region, $component );
 		}
 		return $prices;

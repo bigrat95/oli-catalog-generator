@@ -18,14 +18,16 @@ class OLICG_Catalog {
 			'order'             => array(),
 			'images'            => array(),
 			'region'            => 'ca',
-			'price_type'        => 'retail',
+			'prices'            => array( 'retail' ),
 			'language'          => '',
 			'layout'            => 'compact',
 			'columns'           => 6,
 			'paper'             => 'letter',
 			'hide_no_price'     => 1,
 			'hide_out_of_stock' => 0,
+			'show_image'        => 1,
 			'show_sku'          => 1,
+			'show_upc'          => 0,
 			'show_brand'        => 1,
 			'section_new_page'  => 0,
 			'logo_url'          => '',
@@ -61,7 +63,13 @@ class OLICG_Catalog {
 		if ( $saved && ! isset( $saved['layout'] ) ) {
 			unset( $saved['columns'], $saved['section_new_page'] );
 		}
-		return wp_parse_args( $saved, self::defaults() );
+		if ( ! isset( $saved['prices'] ) && isset( $saved['price_type'] ) ) {
+			$saved['prices'] = OLICG_Pricing::legacy_components( $saved['price_type'] );
+		}
+		unset( $saved['price_type'] );
+		$settings           = wp_parse_args( $saved, self::defaults() );
+		$settings['prices'] = OLICG_Pricing::sanitize_components( $settings['prices'] );
+		return $settings;
 	}
 
 	public static function image_size( array $settings ) {
@@ -126,7 +134,7 @@ class OLICG_Catalog {
 	 *
 	 * @return array[] Each: title, eyebrow, path[], items[] (id, product, name, sku, image, brand, prices).
 	 */
-	public static function get_sections( array $settings, $region, $price_type, $lang = '' ) {
+	public static function get_sections( array $settings, $region, array $components, $lang = '' ) {
 		$selected = array_map( 'intval', $settings['categories'] );
 		if ( '' !== $lang ) {
 			$selected = array_map( static function ( $term_id ) use ( $lang ) {
@@ -144,8 +152,8 @@ class OLICG_Catalog {
 				continue;
 			}
 
-			$prices = OLICG_Pricing::get_prices( $product, $region, $price_type );
-			if ( ! array_filter( $prices ) && ! empty( $settings['hide_no_price'] ) ) {
+			$prices = OLICG_Pricing::get_prices( $product, $region, $components );
+			if ( $prices && ! array_filter( $prices ) && ! empty( $settings['hide_no_price'] ) ) {
 				continue;
 			}
 
@@ -179,6 +187,7 @@ class OLICG_Catalog {
 				'product' => $shown,
 				'name'    => $shown->get_name(),
 				'sku'     => $product->get_sku(),
+				'upc'     => self::upc( $product ),
 				'image'   => self::image_url( $shown->get_image_id() ? $shown : $product, self::image_size( $settings ) ),
 				'brand'   => '' !== $brand || $shown === $product ? $brand : self::brand_name( $product ),
 				'prices'  => $prices,
@@ -385,6 +394,23 @@ class OLICG_Catalog {
 		}
 		$attribute = $product->get_attribute( 'brand' );
 		return is_string( $attribute ) ? $attribute : '';
+	}
+
+	/**
+	 * UPC / GTIN: WooCommerce's GTIN field, then common barcode meta keys.
+	 */
+	public static function upc( WC_Product $product ) {
+		$upc = method_exists( $product, 'get_global_unique_id' ) ? (string) $product->get_global_unique_id() : '';
+		if ( '' === $upc ) {
+			foreach ( (array) apply_filters( 'olicg_upc_meta_keys', array( 'quivers_upc', '_quivers_upc', '_upc', 'upc', '_gtin', 'gtin', '_ean' ) ) as $key ) {
+				$value = get_post_meta( $product->get_id(), $key, true );
+				if ( is_scalar( $value ) && '' !== trim( (string) $value ) ) {
+					$upc = trim( (string) $value );
+					break;
+				}
+			}
+		}
+		return (string) apply_filters( 'olicg_product_upc', $upc, $product );
 	}
 
 	public static function image_url( WC_Product $product, $size = 'woocommerce_single' ) {

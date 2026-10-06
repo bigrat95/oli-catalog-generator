@@ -98,12 +98,15 @@ class OLICG_Admin {
 		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
 	}
 
-	public static function render_url( $region, $price_type, $lang = '' ) {
+	/**
+	 * @param string[]|null $components Price lines; null = the saved selection.
+	 */
+	public static function render_url( $region, $components = null, $lang = '' ) {
 		return add_query_arg(
 			array_filter( array(
 				'action'   => 'olicg_render',
 				'region'   => $region,
-				'price'    => $price_type,
+				'prices'   => null === $components ? '' : ( $components ? implode( ',', $components ) : 'none' ),
 				'lang'     => $lang,
 				'_wpnonce' => wp_create_nonce( 'olicg_render' ),
 			), 'strlen' ),
@@ -130,7 +133,6 @@ class OLICG_Admin {
 
 		$old      = OLICG_Catalog::get_settings();
 		$regions  = OLICG_Pricing::regions();
-		$types    = OLICG_Pricing::price_types();
 		$ids      = static function ( $key ) {
 			return isset( $_POST[ $key ] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) wp_unslash( $_POST[ $key ] ) ) ) ) ) : array();
 		};
@@ -143,7 +145,6 @@ class OLICG_Admin {
 		$excluded = array_values( array_unique( array_merge( $excluded, array_diff( $listed, $included ) ) ) );
 
 		$region = isset( $_POST['olicg_region'] ) ? sanitize_key( wp_unslash( $_POST['olicg_region'] ) ) : 'ca';
-		$type   = isset( $_POST['olicg_price_type'] ) ? sanitize_key( wp_unslash( $_POST['olicg_price_type'] ) ) : 'retail';
 		$paper  = isset( $_POST['olicg_paper'] ) ? sanitize_key( wp_unslash( $_POST['olicg_paper'] ) ) : 'letter';
 		$cols   = isset( $_POST['olicg_columns'] ) ? absint( $_POST['olicg_columns'] ) : 6;
 		$layout = isset( $_POST['olicg_layout'] ) ? sanitize_key( wp_unslash( $_POST['olicg_layout'] ) ) : 'compact';
@@ -157,14 +158,16 @@ class OLICG_Admin {
 			'order'             => empty( $_POST['olicg_order_changed'] ) ? $old['order'] : OLICG_Catalog::merge_order( $ids( 'olicg_order' ), $old['order'] ),
 			'images'            => $old['images'],
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
-			'price_type'        => isset( $types[ $type ] ) ? $type : 'retail',
+			'prices'            => OLICG_Pricing::sanitize_components( isset( $_POST['olicg_prices'] ) ? wp_unslash( $_POST['olicg_prices'] ) : array() ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_components().
 			'language'          => OLICG_I18n::sanitize_language( isset( $_POST['olicg_language'] ) ? wp_unslash( $_POST['olicg_language'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_language().
 			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',
 			'columns'           => $cols >= 2 && $cols <= 6 ? $cols : 6,
 			'paper'             => in_array( $paper, array( 'letter', 'a4' ), true ) ? $paper : 'letter',
 			'hide_no_price'     => empty( $_POST['olicg_hide_no_price'] ) ? 0 : 1,
 			'hide_out_of_stock' => empty( $_POST['olicg_hide_out_of_stock'] ) ? 0 : 1,
+			'show_image'        => empty( $_POST['olicg_show_image'] ) ? 0 : 1,
 			'show_sku'          => empty( $_POST['olicg_show_sku'] ) ? 0 : 1,
+			'show_upc'          => empty( $_POST['olicg_show_upc'] ) ? 0 : 1,
 			'show_brand'        => empty( $_POST['olicg_show_brand'] ) ? 0 : 1,
 			'section_new_page'  => empty( $_POST['olicg_section_new_page'] ) ? 0 : 1,
 			'logo_url'          => isset( $_POST['olicg_logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['olicg_logo_url'] ) ) : '',
@@ -177,7 +180,7 @@ class OLICG_Admin {
 		self::register_strings();
 
 		if ( isset( $_POST['olicg_generate'] ) ) {
-			wp_safe_redirect( self::render_url( $settings['region'], $settings['price_type'], $settings['language'] ) );
+			wp_safe_redirect( self::render_url( $settings['region'], null, $settings['language'] ) );
 			exit;
 		}
 
@@ -200,13 +203,19 @@ class OLICG_Admin {
 		$settings['title'] = OLICG_Catalog::title( $settings, $lang );
 		$html_lang         = str_replace( '_', '-', '' !== $lang ? OLICG_I18n::locale( $lang ) : determine_locale() );
 		$regions           = OLICG_Pricing::regions();
-		$types      = OLICG_Pricing::price_types();
-		$region     = isset( $_GET['region'] ) ? sanitize_key( wp_unslash( $_GET['region'] ) ) : $settings['region'];
-		$price_type = isset( $_GET['price'] ) ? sanitize_key( wp_unslash( $_GET['price'] ) ) : $settings['price_type'];
-		$region     = isset( $regions[ $region ] ) ? $region : 'ca';
-		$price_type = isset( $types[ $price_type ] ) ? $price_type : 'retail';
+		$region            = isset( $_GET['region'] ) ? sanitize_key( wp_unslash( $_GET['region'] ) ) : $settings['region'];
+		$region            = isset( $regions[ $region ] ) ? $region : 'ca';
 
-		$sections = OLICG_Catalog::get_sections( $settings, $region, $price_type, $lang );
+		if ( isset( $_GET['prices'] ) ) {
+			$prices = OLICG_Pricing::sanitize_components( sanitize_text_field( wp_unslash( $_GET['prices'] ) ) );
+		} elseif ( isset( $_GET['price'] ) ) {
+			// Links made before price lines could be picked individually.
+			$prices = OLICG_Pricing::legacy_components( sanitize_key( wp_unslash( $_GET['price'] ) ) );
+		} else {
+			$prices = $settings['prices'];
+		}
+
+		$sections = OLICG_Catalog::get_sections( $settings, $region, $prices, $lang );
 		$currency = $regions[ $region ]['currency'];
 		$logo_url = OLICG_Catalog::logo_url( $settings );
 
@@ -266,7 +275,6 @@ class OLICG_Admin {
 
 		$settings = OLICG_Catalog::get_settings();
 		$regions  = OLICG_Pricing::regions();
-		$types    = OLICG_Pricing::price_types();
 		$excluded = array_map( 'intval', $settings['excluded'] );
 		$added    = array_map( 'intval', $settings['added'] );
 		$cat_ids  = OLICG_Catalog::get_category_product_ids( $settings['categories'] );
@@ -276,7 +284,7 @@ class OLICG_Admin {
 		$languages = OLICG_I18n::is_multilingual() ? OLICG_I18n::languages() : array();
 		$language  = '' !== $settings['language'] ? $settings['language'] : OLICG_I18n::default_language();
 		?>
-			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition and price type, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
+			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition, prices and details, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
 			<p class="olicg-private"><?php esc_html_e( 'Private: catalogues are only generated here in the admin. They never appear on your website, and catalogue links only open for logged-in shop managers and administrators.', 'oli-catalog-generator' ); ?></p>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -344,10 +352,18 @@ class OLICG_Admin {
 
 						<fieldset class="olicg-choice">
 							<legend><strong><?php esc_html_e( 'Prices shown', 'oli-catalog-generator' ); ?></strong></legend>
-							<?php foreach ( $types as $key => $label ) : ?>
-								<label><input type="radio" name="olicg_price_type" value="<?php echo esc_attr( $key ); ?>" <?php checked( $settings['price_type'], $key ); ?>> <?php echo esc_html( $label ); ?></label>
+							<?php foreach ( OLICG_Pricing::component_descriptions() as $key => $label ) : ?>
+								<label><input type="checkbox" name="olicg_prices[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['prices'], true ) ); ?>> <?php echo esc_html( $label ); ?></label>
 							<?php endforeach; ?>
-							<p class="description"><?php esc_html_e( 'End-user price = the lowest of the regular (list) and sale (MAP) prices. Dealer price = imported dealer cost. Cost, List & MAP = all three on each product (cost = dealer cost, list = regular price, MAP = sale price).', 'oli-catalog-generator' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Tick any combination — each ticked price gets its own line on every product. Leave all unticked for a catalogue without prices.', 'oli-catalog-generator' ); ?></p>
+						</fieldset>
+
+						<fieldset class="olicg-choice">
+							<legend><strong><?php esc_html_e( 'Product details shown', 'oli-catalog-generator' ); ?></strong></legend>
+							<label><input type="checkbox" name="olicg_show_image" value="1" <?php checked( $settings['show_image'] ); ?>> <?php esc_html_e( 'Image', 'oli-catalog-generator' ); ?></label>
+							<label><input type="checkbox" name="olicg_show_brand" value="1" <?php checked( $settings['show_brand'] ); ?>> <?php esc_html_e( 'Brand', 'oli-catalog-generator' ); ?></label>
+							<label><input type="checkbox" name="olicg_show_sku" value="1" <?php checked( $settings['show_sku'] ); ?>> <?php esc_html_e( 'SKU', 'oli-catalog-generator' ); ?></label>
+							<label><input type="checkbox" name="olicg_show_upc" value="1" <?php checked( $settings['show_upc'] ); ?>> <?php esc_html_e( 'UPC', 'oli-catalog-generator' ); ?></label>
 						</fieldset>
 
 						<fieldset class="olicg-choice">
@@ -373,9 +389,7 @@ class OLICG_Admin {
 								</select>
 							</label>
 							<label><input type="checkbox" name="olicg_section_new_page" value="1" <?php checked( $settings['section_new_page'] ); ?>> <?php esc_html_e( 'Start each category on a new page', 'oli-catalog-generator' ); ?></label>
-							<label><input type="checkbox" name="olicg_show_sku" value="1" <?php checked( $settings['show_sku'] ); ?>> <?php esc_html_e( 'Show SKU', 'oli-catalog-generator' ); ?></label>
-							<label><input type="checkbox" name="olicg_show_brand" value="1" <?php checked( $settings['show_brand'] ); ?>> <?php esc_html_e( 'Show brand', 'oli-catalog-generator' ); ?></label>
-							<label><input type="checkbox" name="olicg_hide_no_price" value="1" <?php checked( $settings['hide_no_price'] ); ?>> <?php esc_html_e( 'Hide products without a price for the chosen edition', 'oli-catalog-generator' ); ?></label>
+							<label><input type="checkbox" name="olicg_hide_no_price" value="1" <?php checked( $settings['hide_no_price'] ); ?>> <?php esc_html_e( 'Hide products without any of the chosen prices', 'oli-catalog-generator' ); ?></label>
 							<label><input type="checkbox" name="olicg_hide_out_of_stock" value="1" <?php checked( $settings['hide_out_of_stock'] ); ?>> <?php esc_html_e( 'Hide out-of-stock products', 'oli-catalog-generator' ); ?></label>
 						</fieldset>
 
@@ -397,9 +411,7 @@ class OLICG_Admin {
 									<span class="olicg-quick-lang"><?php echo esc_html( $lang['label'] ); ?></span>
 								<?php endif; ?>
 								<?php foreach ( $regions as $rkey => $region ) : ?>
-									<?php foreach ( $types as $tkey => $label ) : ?>
-										<a class="button button-small" target="_blank" href="<?php echo esc_url( self::render_url( $rkey, $tkey, $code ) ); ?>"><?php echo esc_html( $region['currency'] . ' · ' . $label ); ?></a>
-									<?php endforeach; ?>
+									<a class="button button-small" target="_blank" href="<?php echo esc_url( self::render_url( $rkey, null, $code ) ); ?>"><?php echo esc_html( $region['label'] . ' (' . $region['currency'] . ')' ); ?></a>
 								<?php endforeach; ?>
 							<?php endforeach; ?>
 						</p>
