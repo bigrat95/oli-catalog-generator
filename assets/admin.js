@@ -65,6 +65,29 @@
 			$row.toggleClass( 'is-excluded', removing );
 		} );
 
+		$( document ).on( 'click', '.olicg-media-pick', function () {
+			var $box = $( this ).closest( '.olicg-media' );
+			if ( ! window.wp || ! wp.media ) {
+				$box.find( '.olicg-media-url' ).trigger( 'focus' );
+				return;
+			}
+			var frame = wp.media( { library: { type: 'image' }, multiple: false } );
+			frame.on( 'select', function () {
+				var image = frame.state().get( 'selection' ).first().toJSON();
+				$box.find( '.olicg-media-url' ).val( image.url ).trigger( 'change' );
+			} );
+			frame.open();
+		} );
+
+		$( document ).on( 'click', '.olicg-media-clear', function () {
+			$( this ).closest( '.olicg-media' ).find( '.olicg-media-url' ).val( '' ).trigger( 'change' );
+		} );
+
+		$( document ).on( 'change input', '.olicg-media-url', function () {
+			var url = $.trim( this.value );
+			$( this ).closest( '.olicg-media' ).find( '.olicg-media-preview' ).attr( 'src', url ).prop( 'hidden', ! url );
+		} );
+
 		$( '.olicg-filter' ).on( 'input', function () {
 			var term = $.trim( this.value.toLowerCase() );
 			$( '.olicg-section' ).each( function () {

@@ -12,6 +12,14 @@
 .olicg-price-choice { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 460px; }
 .olicg-price-choice label { flex: 1; }
 .olicg-price-label { width: 10em; }
+.olicg-media { margin: 10px 0 14px; }
+.olicg-media-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.olicg-media-row .olicg-media-url { flex: 1; }
+.olicg-media-preview { display: block; max-width: 220px; max-height: 140px; margin-top: 8px; border: 1px solid #dcdcde; background: repeating-conic-gradient(#f0f0f1 0 25%, #fff 0 50%) 50% / 16px 16px; }
+.olicg-media-preview[hidden] { display: none; }
+.olicg-tokens { margin: 4px 0 10px; columns: 2; font-size: 12px; }
+.olicg-tokens li { margin: 0 0 4px; break-inside: avoid; }
+.olicg-card h3 { margin: 22px 0 6px; font-size: 13px; }
 .olicg-actions { display: flex; gap: 8px; margin-top: 18px; }
 .olicg-quick .button { margin: 6px 6px 0 0; }
 .olicg-quick-lang { display: inline-block; min-width: 72px; margin-top: 6px; font-weight: 600; }

@@ -25,9 +25,21 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 
 - Fonts for headings, body, labels & prices, and the product PDF sheet, loaded from Google Fonts by name, from a stylesheet URL (Adobe Fonts kit, self-hosted `@font-face` CSS…), or from installed/system fonts.
 - Italic headings on/off, heading weight, uppercase labels on/off.
-- Colours: text, secondary text, borders, image background, prices, cover band / PDF footer bar and its text.
+- Colours: text, secondary text, borders, image background, prices, cover band / PDF footer bar and its text, catalogue page background.
 - Product images: **Blend** (the photo melts into the image background colour — best for photos on white), **Solid colour** behind the image (best for transparent PNGs) or **No background**, plus an optional soft or strong drop shadow.
 - Custom CSS, added to the catalogue and the PDF sheet.
+
+## Cover page
+
+**WooCommerce → Catalog & Product PDF → Cover page**:
+
+- **Designed cover**, **Full-page image** (your own artwork printed edge to edge, fill or fit) or **No cover**.
+- Every cover text is editable: company name, the two top-right lines, the small line above the title, title, second title line, the three information-band boxes (label + value) and the note. Empty = automatic text; a single dash (`-`) prints nothing. Placeholders: `{title}`, `{year}`, `{date}`, `{site}`, `{domain}`, `{market}`, `{currency}`, `{prices}`, `{edition_label}`, `{count}`, `{note}`.
+- Show / hide the logo, top-right lines, line above the title, information band and note.
+- Logo (media library picker, height in px) — also used by the product PDF sheet when it has no logo of its own.
+- Background colour and/or background image (with an adjustable colour overlay for legibility), cover text and secondary text colours — a coloured or image background prints edge to edge.
+- Title font and size (empty = the Design tab headings font).
+- Custom texts are translatable with WPML String Translation / Polylang (names "Cover: …") or TranslatePress.
 
 ## Product PDF (optional)
 

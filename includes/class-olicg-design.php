@@ -29,6 +29,7 @@ class OLICG_Design {
 			'color_price'      => '#09090b',
 			'color_band'       => '#09090b',
 			'color_band_text'  => '#ffffff',
+			'color_page'       => '#ffffff',
 			'custom_css'       => '',
 		);
 	}
@@ -66,6 +67,7 @@ class OLICG_Design {
 			'color_price'     => __( 'Prices', 'oli-catalog-generator' ),
 			'color_band'      => __( 'Cover band & PDF footer bar', 'oli-catalog-generator' ),
 			'color_band_text' => __( 'Cover band & PDF footer text', 'oli-catalog-generator' ),
+			'color_page'      => __( 'Catalogue page background', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -133,6 +135,7 @@ class OLICG_Design {
 			'--price'          => $d['color_price'],
 			'--band'           => $d['color_band'],
 			'--band-text'      => $d['color_band_text'],
+			'--page'           => $d['color_page'],
 			'--serif'          => $stacks['serif'],
 			'--sans'           => $stacks['sans'],
 			'--mono'           => $stacks['mono'],

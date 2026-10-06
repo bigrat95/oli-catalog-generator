@@ -474,9 +474,15 @@ class OLICG_Catalog {
 		return $url ? $url : wc_placeholder_img_src( $size );
 	}
 
-	public static function logo_url( array $settings ) {
-		if ( ! empty( $settings['logo_url'] ) ) {
-			return $settings['logo_url'];
+	/**
+	 * @param bool $custom False = the site logo only (ignores the logo chosen in the Cover tab).
+	 */
+	public static function logo_url( array $settings, $custom = true ) {
+		if ( $custom ) {
+			$cover = OLICG_Cover::get_settings();
+			if ( '' !== $cover['logo_url'] ) {
+				return $cover['logo_url'];
+			}
 		}
 		if ( function_exists( 'get_field' ) ) {
 			$logo = get_field( 'site_logo', 'option' );

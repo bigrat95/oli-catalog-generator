@@ -17,6 +17,7 @@ class OLICG_Admin {
 		add_action( 'admin_post_olicg_render', array( __CLASS__, 'handle_render' ) );
 		add_action( 'admin_post_nopriv_olicg_render', array( __CLASS__, 'deny' ) );
 		add_action( 'admin_post_olicg_save_design', array( 'OLICG_Design', 'handle_save' ) );
+		add_action( 'admin_post_olicg_save_cover', array( 'OLICG_Cover', 'handle_save' ) );
 		add_action( 'wp_ajax_olicg_arrange', array( __CLASS__, 'handle_arrange' ) );
 	}
 
@@ -99,6 +100,7 @@ class OLICG_Admin {
 		}
 		wp_enqueue_style( 'woocommerce_admin_styles' );
 		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_media();
 		wp_enqueue_script( 'wc-enhanced-select' );
 		wp_enqueue_style( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.css', array(), OLICG_VERSION );
 		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
@@ -132,6 +134,7 @@ class OLICG_Admin {
 			OLICG_I18n::register_string( 'Price label: ' . $key, $label );
 		}
 		OLICG_Product_PDF::register_strings();
+		OLICG_Cover::register_strings();
 	}
 
 	public static function handle_save() {
@@ -181,7 +184,7 @@ class OLICG_Admin {
 			'show_upc'          => empty( $_POST['olicg_show_upc'] ) ? 0 : 1,
 			'show_brand'        => empty( $_POST['olicg_show_brand'] ) ? 0 : 1,
 			'section_new_page'  => empty( $_POST['olicg_section_new_page'] ) ? 0 : 1,
-			'logo_url'          => isset( $_POST['olicg_logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['olicg_logo_url'] ) ) : '',
+			'logo_url'          => $old['logo_url'],
 		);
 		if ( '' === $settings['title'] ) {
 			$settings['title'] = OLICG_Catalog::DEFAULT_TITLE;
@@ -250,7 +253,7 @@ class OLICG_Admin {
 		}
 
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'catalog';
-		$tab  = in_array( $tab, array( 'catalog', 'pdf', 'design' ), true ) ? $tab : 'catalog';
+		$tab  = in_array( $tab, array( 'catalog', 'cover', 'pdf', 'design' ), true ) ? $tab : 'catalog';
 		$base = admin_url( 'admin.php?page=' . self::SLUG );
 		self::register_strings();
 		?>
@@ -258,6 +261,7 @@ class OLICG_Admin {
 			<h1><?php esc_html_e( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ); ?></h1>
 			<nav class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( $base ); ?>" class="nav-tab<?php echo 'catalog' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Catalog', 'oli-catalog-generator' ); ?></a>
+				<a href="<?php echo esc_url( $base . '&tab=cover' ); ?>" class="nav-tab<?php echo 'cover' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Cover page', 'oli-catalog-generator' ); ?></a>
 				<a href="<?php echo esc_url( $base . '&tab=pdf' ); ?>" class="nav-tab<?php echo 'pdf' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Product PDF', 'oli-catalog-generator' ); ?></a>
 				<a href="<?php echo esc_url( $base . '&tab=design' ); ?>" class="nav-tab<?php echo 'design' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Design', 'oli-catalog-generator' ); ?></a>
 			</nav>
@@ -271,6 +275,8 @@ class OLICG_Admin {
 				OLICG_Product_PDF::render_settings();
 			} elseif ( 'design' === $tab ) {
 				OLICG_Design::render_settings();
+			} elseif ( 'cover' === $tab ) {
+				OLICG_Cover::render_settings();
 			} else {
 				self::render_catalog_tab();
 			}
@@ -409,10 +415,14 @@ class OLICG_Admin {
 							<label><input type="checkbox" name="olicg_hide_out_of_stock" value="1" <?php checked( $settings['hide_out_of_stock'] ); ?>> <?php esc_html_e( 'Hide out-of-stock products', 'oli-catalog-generator' ); ?></label>
 						</fieldset>
 
-						<p>
-							<label for="olicg_logo_url"><strong><?php esc_html_e( 'Logo URL (optional)', 'oli-catalog-generator' ); ?></strong></label><br>
-							<input type="url" id="olicg_logo_url" name="olicg_logo_url" class="large-text" value="<?php echo esc_attr( $settings['logo_url'] ); ?>" placeholder="<?php echo esc_attr( OLICG_Catalog::logo_url( array_merge( $settings, array( 'logo_url' => '' ) ) ) ); ?>">
-							<span class="description"><?php esc_html_e( 'Leave empty to use the site logo.', 'oli-catalog-generator' ); ?></span>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: link to the Cover page tab */
+								esc_html__( 'Logo, cover texts, cover image and background: %s.', 'oli-catalog-generator' ),
+								'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=cover' ) ) . '">' . esc_html__( 'Cover page tab', 'oli-catalog-generator' ) . '</a>'
+							);
+							?>
 						</p>
 
 						<div class="olicg-actions">

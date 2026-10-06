@@ -42,6 +42,47 @@ $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 $olicg_is_table  = 'table' === $olicg_layout;
 $olicg_edition_short = trim( $regions[ $region ]['short'] . ' ' . ( $olicg_is_dealer ? __( 'Dealer', 'oli-catalog-generator' ) : ( $olicg_components ? __( 'Retail', 'oli-catalog-generator' ) : '' ) ) );
 
+if ( $olicg_is_dealer ) {
+	$olicg_note = __( 'Confidential dealer pricing — not for public distribution. Prices subject to change without notice.', 'oli-catalog-generator' );
+} elseif ( $olicg_components ) {
+	$olicg_note = __( 'Suggested retail prices. Prices and availability subject to change without notice.', 'oli-catalog-generator' );
+} else {
+	$olicg_note = __( 'Specifications and availability subject to change without notice.', 'oli-catalog-generator' );
+}
+
+$olicg_cover      = OLICG_Cover::get_settings();
+$olicg_cover_mode = 'image' === $olicg_cover['mode'] && '' === $olicg_cover['image_url'] ? 'design' : $olicg_cover['mode'];
+$olicg_has_cover  = 'none' !== $olicg_cover_mode;
+$olicg_bleed      = $olicg_has_cover && OLICG_Cover::is_bleed( $olicg_cover );
+$olicg_cover_texts  = OLICG_Cover::texts( $olicg_cover, $lang );
+$olicg_cover_values = array(
+	'{title}'         => $settings['title'],
+	'{year}'          => $olicg_year,
+	'{date}'          => $olicg_date,
+	'{site}'          => get_bloginfo( 'name' ),
+	'{domain}'        => (string) wp_parse_url( home_url(), PHP_URL_HOST ),
+	'{market}'        => $olicg_market,
+	'{currency}'      => $currency,
+	'{prices}'        => $olicg_prices_lbl,
+	'{edition_label}' => $olicg_price_lbl,
+	'{count}'         => $olicg_count,
+	'{note}'          => $olicg_note,
+);
+$olicg_cover_text = static function ( $key ) use ( $olicg_cover_texts, $olicg_cover_values ) {
+	return OLICG_Cover::fill( $olicg_cover_texts[ $key ], $olicg_cover_values );
+};
+$olicg_band = array();
+foreach ( array( 1, 2, 3 ) as $olicg_n ) {
+	// Without prices the automatic "Prices" box has nothing to say.
+	if ( 2 === $olicg_n && ! $olicg_components && empty( $olicg_cover['texts']['band2_value'] ) ) {
+		continue;
+	}
+	$olicg_box = array( $olicg_cover_text( 'band' . $olicg_n . '_label' ), $olicg_cover_text( 'band' . $olicg_n . '_value' ) );
+	if ( '' !== $olicg_box[0] . $olicg_box[1] ) {
+		$olicg_band[] = $olicg_box;
+	}
+}
+
 /**
  * Zoomable image box (catalogue cards and price list pictures).
  */
@@ -62,7 +103,7 @@ $olicg_image_box = static function ( array $item ) use ( $settings, $olicg_layou
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <title><?php echo esc_html( $settings['title'] . ' ' . $olicg_year . ' — ' . $olicg_edition ); ?></title>
-<?php foreach ( OLICG_Design::font_urls( array( 'heading', 'body', 'mono' ), $olicg_design ) as $olicg_font_url ) : ?>
+<?php foreach ( OLICG_Design::font_urls( array( 'heading', 'body', 'mono', 'cover' ), array_merge( $olicg_design, array( 'font_cover' => $olicg_has_cover ? $olicg_cover['title_font'] : '' ) ) ) as $olicg_font_url ) : ?>
 <link rel="stylesheet" href="<?php echo esc_url( $olicg_font_url ); ?>">
 <?php endforeach; ?>
 <style>
@@ -79,10 +120,13 @@ $olicg_image_box = static function ( array $item ) use ( $settings, $olicg_layou
 	@bottom-left { content: "<?php echo $olicg_footer_css; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped for a CSS string above. ?>"; font: 7pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_muted'] ); ?>; }
 	@bottom-right { content: counter(page); font: 700 8pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_text'] ); ?>; }
 }
+<?php if ( $olicg_has_cover ) : ?>
 @page :first {
+	<?php echo $olicg_bleed ? 'margin: 0;' : ''; ?>
 	@bottom-left { content: none; }
 	@bottom-right { content: none; }
 }
+<?php endif; ?>
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -146,31 +190,47 @@ body {
 /* Screen preview: one long sheet at print width */
 .doc {
 	width: <?php echo 'a4' === $olicg_paper ? 'calc(210mm - 0.9in)' : '7.6in'; ?>;
-	margin: 32px auto; background: #fff; padding: 0.5in 0.45in;
+	margin: 32px auto; background: var(--page); padding: 0.5in 0.45in;
 	box-shadow: 0 10px 40px rgba(0,0,0,.15);
 }
 
 /* Cover */
 .cover {
+	position: relative;
 	display: flex; flex-direction: column;
 	min-height: <?php echo 'a4' === $olicg_paper ? '264mm' : '9.75in'; ?>;
 	break-after: page;
+	color: var(--cover-text, var(--ink));
+	background-color: var(--cover-bg, transparent);
+	background-size: cover; background-position: center; background-repeat: no-repeat;
 }
-.cover-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--ink); padding-bottom: 18px; }
-.cover-logo { height: 54px; width: auto; }
-.cover-wordmark { font: 700 28px var(--sans); letter-spacing: .2em; }
-.cover-meta-top { text-align: right; font: 9pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .12em; line-height: 1.7; }
+.cover.has-bg-image::before { content: ""; position: absolute; inset: 0; background: var(--cover-bg, #fff); opacity: var(--cover-overlay, 0); pointer-events: none; }
+.cover > * { position: relative; }
+.cover-bleed {
+	margin: -0.5in -0.45in 0.5in;
+	padding: 0.5in 0.45in 0.6in;
+	aspect-ratio: <?php echo 'a4' === $olicg_paper ? '210 / 297' : '8.5 / 11'; ?>;
+	min-height: 0;
+	overflow: hidden;
+}
+.cover-image { padding: 0; background-color: var(--cover-bg, var(--page)); }
+.cover-image img { display: block; width: 100%; height: 100%; }
+.cover-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid currentColor; padding-bottom: 18px; }
+.cover-logo { height: var(--cover-logo-h, 54px); width: auto; display: block; }
+.cover-wordmark { font: 700 28px var(--sans); letter-spacing: .2em; text-transform: var(--label-case); }
+.cover-meta-top { text-align: right; font: 9pt var(--mono); color: var(--cover-muted, var(--muted)); text-transform: var(--label-case); letter-spacing: .12em; line-height: 1.7; }
 .cover-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; }
 .eyebrow { font: 700 9pt var(--mono); text-transform: var(--label-case); letter-spacing: .25em; color: var(--muted); }
-.cover-title { font: var(--heading-style) var(--heading-weight) 58pt/1.02 var(--serif); margin: 16px 0 0; letter-spacing: -.01em; }
-.cover-year { font: var(--heading-style) var(--heading-weight) 58pt/1.02 var(--serif); color: var(--muted); }
+.cover .eyebrow { color: var(--cover-muted, var(--muted)); }
+.cover-title { font: var(--heading-style) var(--heading-weight) var(--cover-title-size, 58pt)/1.02 var(--cover-title-font, var(--serif)); margin: 16px 0 0; letter-spacing: -.01em; }
+.cover-year { font: inherit; color: var(--cover-muted, var(--muted)); }
 .cover-band {
 	background: var(--band); color: var(--band-text); padding: 22px 26px;
 	display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
 }
 .cover-band .label { font: 7.5pt var(--mono); text-transform: var(--label-case); letter-spacing: .2em; opacity: .65; }
 .cover-band .value { font: 700 12pt var(--mono); margin-top: 6px; text-transform: var(--label-case); letter-spacing: .06em; }
-.cover-note { margin-top: 14px; font: 8pt var(--mono); color: var(--muted); line-height: 1.6; }
+.cover-note { margin-top: 14px; font: 8pt var(--mono); color: var(--cover-muted, var(--muted)); line-height: 1.6; }
 
 /* Sections */
 .section + .section { margin-top: 0.35in; }
@@ -187,7 +247,7 @@ body {
 
 /* Product grid */
 .grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0.16in; }
-.card { border: 1px solid var(--line); background: #fff; break-inside: avoid; page-break-inside: avoid; display: flex; flex-direction: column; }
+.card { border: 1px solid var(--line); background: var(--page); break-inside: avoid; page-break-inside: avoid; display: flex; flex-direction: column; }
 .card-img { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--tile-bg); }
 .card-img img { position: absolute; top: 6%; left: 10%; width: 80%; height: 88%; object-fit: contain; display: block; mix-blend-mode: var(--img-blend); filter: var(--img-shadow); }
 .card-body { padding: 9px 10px 10px; display: flex; flex-direction: column; flex: 1; border-top: 1px solid var(--line); }
@@ -314,7 +374,8 @@ body {
 .empty { font: 11pt var(--mono); color: var(--muted); padding: 40px 0; }
 
 @media print {
-	body { background: #fff; }
+	body { background: var(--page); }
+	.cover-bleed { margin: 0; aspect-ratio: auto; height: <?php echo 'a4' === $olicg_paper ? '297mm' : '11in'; ?>; }
 	.toolbar, .card-remove, .img-zoom, .row-actions, .pic-remove, .pics-bar { display: none !important; }
 	.row:hover td { background: none; }
 	.card-img { outline: 0 !important; }
@@ -350,43 +411,53 @@ body {
 
 <main class="doc">
 
-	<section class="cover">
-		<div class="cover-top">
-			<?php if ( $logo_url ) : ?>
-				<img class="cover-logo" src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
-			<?php else : ?>
-				<div class="cover-wordmark"><?php echo esc_html( strtoupper( get_bloginfo( 'name' ) ) ); ?></div>
+	<?php if ( 'image' === $olicg_cover_mode ) : ?>
+		<section class="cover cover-bleed cover-image" style="<?php echo esc_attr( OLICG_Cover::style( $olicg_cover ) ); ?>">
+			<img src="<?php echo esc_url( $olicg_cover['image_url'] ); ?>" alt="<?php echo esc_attr( $settings['title'] ); ?>" style="object-fit: <?php echo 'contain' === $olicg_cover['image_fit'] ? 'contain' : 'cover'; ?>;">
+		</section>
+	<?php elseif ( 'design' === $olicg_cover_mode ) : ?>
+		<section class="cover<?php echo OLICG_Cover::is_bleed( $olicg_cover ) ? ' cover-bleed' : ''; ?><?php echo $olicg_cover['bg_image_url'] ? ' has-bg-image' : ''; ?>" style="<?php echo esc_attr( OLICG_Cover::style( $olicg_cover ) ); ?>">
+			<?php if ( $olicg_cover['show_logo'] || $olicg_cover['show_meta'] ) : ?>
+				<div class="cover-top">
+					<div>
+						<?php if ( $olicg_cover['show_logo'] && $logo_url ) : ?>
+							<img class="cover-logo" src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+						<?php elseif ( $olicg_cover['show_logo'] ) : ?>
+							<div class="cover-wordmark"><?php echo $olicg_cover_text( 'wordmark' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div>
+						<?php endif; ?>
+					</div>
+					<?php if ( $olicg_cover['show_meta'] ) : ?>
+						<div class="cover-meta-top">
+							<?php echo implode( '<br>', array_filter( array( $olicg_cover_text( 'meta1' ), $olicg_cover_text( 'meta2' ) ), 'strlen' ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?>
+						</div>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
-			<div class="cover-meta-top">
-				<?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?><br>
-				<?php echo esc_html( $olicg_date ); ?>
+
+			<div class="cover-main">
+				<?php if ( $olicg_cover['show_eyebrow'] && '' !== $olicg_cover_text( 'eyebrow' ) ) : ?>
+					<div class="eyebrow"><?php echo $olicg_cover_text( 'eyebrow' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div>
+				<?php endif; ?>
+				<h1 class="cover-title">
+					<?php echo $olicg_cover_text( 'title' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?>
+					<?php if ( '' !== $olicg_cover_text( 'subtitle' ) ) : ?>
+						<br><span class="cover-year"><?php echo $olicg_cover_text( 'subtitle' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></span>
+					<?php endif; ?>
+				</h1>
 			</div>
-		</div>
 
-		<div class="cover-main">
-			<div class="eyebrow"><?php echo esc_html( $olicg_price_lbl . ' · ' . $olicg_market ); ?></div>
-			<h1 class="cover-title"><?php echo esc_html( $settings['title'] ); ?><br><span class="cover-year"><?php echo esc_html( $olicg_year ); ?></span></h1>
-		</div>
-
-		<div class="cover-band"<?php echo $olicg_components ? '' : ' style="grid-template-columns: repeat(2, 1fr);"'; ?>>
-			<div><div class="label"><?php esc_html_e( 'Market', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_market ); ?></div></div>
-			<?php if ( $olicg_components ) : ?>
-				<div><div class="label"><?php esc_html_e( 'Prices', 'oli-catalog-generator' ); ?></div><div class="value"><?php echo esc_html( $olicg_prices_lbl . ' · ' . $currency ); ?></div></div>
+			<?php if ( $olicg_cover['show_band'] && $olicg_band ) : ?>
+				<div class="cover-band" style="grid-template-columns: repeat(<?php echo (int) count( $olicg_band ); ?>, 1fr);">
+					<?php foreach ( $olicg_band as $olicg_box ) : ?>
+						<div><div class="label"><?php echo $olicg_box[0]; // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div><div class="value"><?php echo $olicg_box[1]; // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div></div>
+					<?php endforeach; ?>
+				</div>
 			<?php endif; ?>
-			<div><div class="label"><?php esc_html_e( 'Products', 'oli-catalog-generator' ); ?></div><div class="value js-total"><?php echo esc_html( $olicg_count ); ?></div></div>
-		</div>
-		<div class="cover-note">
-			<?php
-			if ( $olicg_is_dealer ) {
-				esc_html_e( 'Confidential dealer pricing — not for public distribution. Prices subject to change without notice.', 'oli-catalog-generator' );
-			} elseif ( $olicg_components ) {
-				esc_html_e( 'Suggested retail prices. Prices and availability subject to change without notice.', 'oli-catalog-generator' );
-			} else {
-				esc_html_e( 'Specifications and availability subject to change without notice.', 'oli-catalog-generator' );
-			}
-			?>
-		</div>
-	</section>
+			<?php if ( $olicg_cover['show_note'] && '' !== $olicg_cover_text( 'note' ) ) : ?>
+				<div class="cover-note"><?php echo $olicg_cover_text( 'note' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div>
+			<?php endif; ?>
+		</section>
+	<?php endif; ?>
 
 	<?php if ( ! $sections ) : ?>
 		<p class="empty"><?php esc_html_e( 'No products match this selection.', 'oli-catalog-generator' ); ?></p>
