@@ -17,19 +17,44 @@ class OLICG_Catalog {
 			'added'             => array(),
 			'region'            => 'ca',
 			'price_type'        => 'retail',
-			'columns'           => 3,
+			'layout'            => 'compact',
+			'columns'           => 6,
 			'paper'             => 'letter',
 			'hide_no_price'     => 1,
 			'hide_out_of_stock' => 0,
 			'show_sku'          => 1,
-			'section_new_page'  => 1,
+			'section_new_page'  => 0,
 			'logo_url'          => '',
+		);
+	}
+
+	public static function layouts() {
+		return array(
+			'compact' => __( 'Compact grid — small images, about 30–36 products per page', 'oli-catalog-generator' ),
+			'list'    => __( 'List — thumbnails in two columns, about 34 products per page', 'oli-catalog-generator' ),
+			'grid'    => __( 'Large cards — big images, 9 products per page', 'oli-catalog-generator' ),
 		);
 	}
 
 	public static function get_settings() {
 		$saved = get_option( self::OPTION, array() );
-		return wp_parse_args( is_array( $saved ) ? $saved : array(), self::defaults() );
+		$saved = is_array( $saved ) ? $saved : array();
+		// Selections saved before layouts existed used large 3-column cards.
+		if ( $saved && ! isset( $saved['layout'] ) ) {
+			unset( $saved['columns'], $saved['section_new_page'] );
+		}
+		return wp_parse_args( $saved, self::defaults() );
+	}
+
+	public static function image_size( array $settings ) {
+		switch ( $settings['layout'] ) {
+			case 'list':
+				return 'thumbnail';
+			case 'compact':
+				return 'woocommerce_thumbnail';
+			default:
+				return 'woocommerce_single';
+		}
 	}
 
 	public static function save_settings( array $settings ) {
@@ -112,7 +137,7 @@ class OLICG_Catalog {
 				'product' => $product,
 				'name'    => $product->get_name(),
 				'sku'     => $product->get_sku(),
-				'image'   => self::image_url( $product ),
+				'image'   => self::image_url( $product, self::image_size( $settings ) ),
 				'price'   => $price,
 			);
 		}

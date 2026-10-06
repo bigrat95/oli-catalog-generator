@@ -7,7 +7,8 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Pick product categories (sub-categories included), untick products to remove them, add others manually.
 - Canada (CAD) or United States (USD) edition.
 - End-user prices or dealer prices.
-- Letter or A4, 2–4 products per row, each category on its own page, page numbers and running footer.
+- Three layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page) and **Large cards** (9 per page).
+- Letter or A4, optional new page per category, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
 
 ## Product PDF (optional)

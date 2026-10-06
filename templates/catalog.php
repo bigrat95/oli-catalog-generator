@@ -20,7 +20,8 @@ $olicg_market    = $regions[ $region ]['label'];
 $olicg_price_lbl = $olicg_is_dealer ? __( 'Dealer price list', 'oli-catalog-generator' ) : __( 'Suggested retail prices', 'oli-catalog-generator' );
 $olicg_footer    = sprintf( '%s — %s %s · %s · %s', get_bloginfo( 'name' ), $settings['title'], $olicg_year, $olicg_market, $currency );
 $olicg_footer_css = str_replace( array( '\\', '"', '<', '>', "\n", "\r" ), array( '\\\\', '\\"', '', '', ' ', ' ' ), wp_strip_all_tags( html_entity_decode( $olicg_footer, ENT_QUOTES, 'UTF-8' ) ) );
-$olicg_columns   = max( 2, min( 4, (int) $settings['columns'] ) );
+$olicg_layout    = isset( OLICG_Catalog::layouts()[ $settings['layout'] ] ) ? $settings['layout'] : 'compact';
+$olicg_columns   = 'list' === $olicg_layout ? 2 : max( 2, min( 'grid' === $olicg_layout ? 4 : 6, (int) $settings['columns'] ) );
 $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 ?><!doctype html>
 <html lang="en">
@@ -138,6 +139,41 @@ body {
 .card-price .currency { font: 6.5pt var(--mono); color: var(--muted); letter-spacing: .12em; }
 .card-price .na { font: 7pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
 
+/* Compact grid: small images, dense rows */
+.layout-compact .section + .section { margin-top: 0.22in; }
+.layout-compact .section-head,
+.layout-list .section-head { padding-bottom: 5px; margin-bottom: 0.1in; }
+.layout-compact .section-title,
+.layout-list .section-title { font-size: 16pt; }
+.layout-compact .section-count,
+.layout-list .section-count { font-size: 6.5pt; }
+.layout-compact .grid { gap: 0.08in; }
+.layout-compact .card-img img { top: 5%; left: 8%; width: 84%; height: 90%; }
+.layout-compact .card-body { padding: 4px 5px 5px; }
+.layout-compact .card-title { font-size: 6.8pt; line-height: 1.2; -webkit-line-clamp: 2; }
+.layout-compact .card-sku { font-size: 5.3pt; margin-top: 2px; letter-spacing: .06em; }
+.layout-compact .card-price { padding-top: 3px; }
+.layout-compact .card-price .amount { font-size: 8pt; }
+.layout-compact .card-price .currency,
+.layout-compact .card-price .na { font-size: 5pt; }
+
+/* List: thumbnail rows in two columns */
+.layout-list .section + .section { margin-top: 0.22in; }
+.layout-list .grid { column-gap: 0.25in; row-gap: 0; }
+.layout-list .card { flex-direction: row; align-items: center; border: 0; border-bottom: 1px solid var(--line); padding: 3px 0; }
+.layout-list .card-img { flex: none; width: 0.45in; aspect-ratio: 1 / 1; }
+.layout-list .card-img img { top: 6%; left: 6%; width: 88%; height: 88%; }
+.layout-list .card-body {
+	border: 0; padding: 0 0 0 8px; min-width: 0;
+	display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-content: center;
+}
+.layout-list .card-title { font-size: 7.5pt; line-height: 1.2; -webkit-line-clamp: 2; grid-column: 1; }
+.layout-list .card-sku { font-size: 5.5pt; margin-top: 1px; grid-column: 1; }
+.layout-list .card-price { grid-column: 2; grid-row: 1 / span 2; margin: 0; padding: 0; flex-direction: column; align-items: flex-end; justify-content: center; gap: 1px; }
+.layout-list .card-price .amount { font-size: 8.5pt; white-space: nowrap; }
+.layout-list .card-price .currency,
+.layout-list .card-price .na { font-size: 5pt; }
+
 .closing { margin-top: 0.4in; padding-top: 12px; border-top: 1px solid var(--line); font: 7.5pt/1.6 var(--mono); color: var(--muted); break-inside: avoid; }
 .empty { font: 11pt var(--mono); color: var(--muted); padding: 40px 0; }
 
@@ -148,7 +184,7 @@ body {
 }
 </style>
 </head>
-<body>
+<body class="layout-<?php echo esc_attr( $olicg_layout ); ?>">
 
 <div class="toolbar">
 	<div>

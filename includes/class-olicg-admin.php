@@ -75,7 +75,8 @@ class OLICG_Admin {
 		$region = isset( $_POST['olicg_region'] ) ? sanitize_key( wp_unslash( $_POST['olicg_region'] ) ) : 'ca';
 		$type   = isset( $_POST['olicg_price_type'] ) ? sanitize_key( wp_unslash( $_POST['olicg_price_type'] ) ) : 'retail';
 		$paper  = isset( $_POST['olicg_paper'] ) ? sanitize_key( wp_unslash( $_POST['olicg_paper'] ) ) : 'letter';
-		$cols   = isset( $_POST['olicg_columns'] ) ? absint( $_POST['olicg_columns'] ) : 3;
+		$cols   = isset( $_POST['olicg_columns'] ) ? absint( $_POST['olicg_columns'] ) : 6;
+		$layout = isset( $_POST['olicg_layout'] ) ? sanitize_key( wp_unslash( $_POST['olicg_layout'] ) ) : 'compact';
 
 		$settings = array(
 			'title'             => isset( $_POST['olicg_title'] ) ? sanitize_text_field( wp_unslash( $_POST['olicg_title'] ) ) : '',
@@ -84,7 +85,8 @@ class OLICG_Admin {
 			'added'             => $ids( 'olicg_added' ),
 			'region'            => isset( $regions[ $region ] ) ? $region : 'ca',
 			'price_type'        => isset( $types[ $type ] ) ? $type : 'retail',
-			'columns'           => in_array( $cols, array( 2, 3, 4 ), true ) ? $cols : 3,
+			'layout'            => isset( OLICG_Catalog::layouts()[ $layout ] ) ? $layout : 'compact',
+			'columns'           => $cols >= 2 && $cols <= 6 ? $cols : 6,
 			'paper'             => in_array( $paper, array( 'letter', 'a4' ), true ) ? $paper : 'letter',
 			'hide_no_price'     => empty( $_POST['olicg_hide_no_price'] ) ? 0 : 1,
 			'hide_out_of_stock' => empty( $_POST['olicg_hide_out_of_stock'] ) ? 0 : 1,
@@ -243,9 +245,16 @@ class OLICG_Admin {
 									<option value="a4" <?php selected( $settings['paper'], 'a4' ); ?>><?php esc_html_e( 'A4', 'oli-catalog-generator' ); ?></option>
 								</select>
 							</label>
-							<label><?php esc_html_e( 'Products per row', 'oli-catalog-generator' ); ?>
+							<label><?php esc_html_e( 'Layout', 'oli-catalog-generator' ); ?>
+								<select name="olicg_layout">
+									<?php foreach ( OLICG_Catalog::layouts() as $key => $label ) : ?>
+										<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $settings['layout'], $key ); ?>><?php echo esc_html( $label ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+							<label><?php esc_html_e( 'Products per row (grids)', 'oli-catalog-generator' ); ?>
 								<select name="olicg_columns">
-									<?php foreach ( array( 2, 3, 4 ) as $cols ) : ?>
+									<?php foreach ( array( 2, 3, 4, 5, 6 ) as $cols ) : ?>
 										<option value="<?php echo esc_attr( $cols ); ?>" <?php selected( (int) $settings['columns'], $cols ); ?>><?php echo esc_html( $cols ); ?></option>
 									<?php endforeach; ?>
 								</select>
