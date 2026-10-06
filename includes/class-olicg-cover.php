@@ -30,7 +30,7 @@ class OLICG_Cover {
 			'title_size'   => 58,
 			'show_meta'    => 1,
 			'show_eyebrow' => 1,
-			'show_band'    => 1,
+			'show_band'    => 0,
 			'show_note'    => 1,
 			'page_numbers' => 1,
 			'page_position' => 'right',
