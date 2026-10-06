@@ -20,8 +20,8 @@ class OLICG_Admin {
 	public static function menu() {
 		add_submenu_page(
 			'woocommerce',
-			__( 'Catalog Generator', 'oli-catalog-generator' ),
-			__( 'Catalog Generator', 'oli-catalog-generator' ),
+			__( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ),
+			__( 'Catalog & Product PDF', 'oli-catalog-generator' ),
 			self::CAP,
 			self::SLUG,
 			array( __CLASS__, 'render_page' )
@@ -136,6 +136,32 @@ class OLICG_Admin {
 			return;
 		}
 
+		$tab  = isset( $_GET['tab'] ) && 'pdf' === $_GET['tab'] ? 'pdf' : 'catalog';
+		$base = admin_url( 'admin.php?page=' . self::SLUG );
+		?>
+		<div class="wrap olicg">
+			<h1><?php esc_html_e( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ); ?></h1>
+			<nav class="nav-tab-wrapper">
+				<a href="<?php echo esc_url( $base ); ?>" class="nav-tab<?php echo 'catalog' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Catalog', 'oli-catalog-generator' ); ?></a>
+				<a href="<?php echo esc_url( $base . '&tab=pdf' ); ?>" class="nav-tab<?php echo 'pdf' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Product PDF', 'oli-catalog-generator' ); ?></a>
+			</nav>
+
+			<?php if ( isset( $_GET['saved'] ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'oli-catalog-generator' ); ?></p></div>
+			<?php endif; ?>
+
+			<?php
+			if ( 'pdf' === $tab ) {
+				OLICG_Product_PDF::render_settings();
+			} else {
+				self::render_catalog_tab();
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	private static function render_catalog_tab() {
 		if ( ! function_exists( 'wp_terms_checklist' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/template.php';
 		}
@@ -149,13 +175,7 @@ class OLICG_Admin {
 		$rows     = self::product_rows( array_values( array_unique( array_merge( $cat_ids, $added ) ) ), $settings['categories'], $cat_ids, $added, $excluded );
 		$included = count( array_filter( $rows, static function ( $row ) { return $row['included']; } ) );
 		?>
-		<div class="wrap olicg">
-			<h1><?php esc_html_e( 'Catalog Generator', 'oli-catalog-generator' ); ?></h1>
 			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition and price type, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
-
-			<?php if ( isset( $_GET['saved'] ) ) : ?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Selection saved.', 'oli-catalog-generator' ); ?></p></div>
-			<?php endif; ?>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="olicg_save">
@@ -318,7 +338,6 @@ class OLICG_Admin {
 					<?php endif; ?>
 				</div>
 			</form>
-		</div>
 		<?php
 	}
 

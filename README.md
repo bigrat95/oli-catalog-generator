@@ -1,6 +1,8 @@
-# Oli Catalog Generator
+# Oli Catalog & Product PDF
 
-Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue) from the WordPress admin.
+Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue) from the WordPress admin, and optionally add a "Download PDF" product sheet button to product pages.
+
+## Catalog
 
 - Pick product categories (sub-categories included), untick products to remove them, add others manually.
 - Canada (CAD) or United States (USD) edition.
@@ -8,11 +10,21 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Letter or A4, 2–4 products per row, each category on its own page, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
 
+## Product PDF (optional)
+
+Off by default. Enable it in **WooCommerce → Catalog & Product PDF → Product PDF**.
+
+- Adds a "Download PDF" button on product pages: automatically (after the product summary or after the Add to cart button) or with the shortcode `[oli_product_pdf]` (`[oli_product_pdf id="123" label="Spec sheet"]` works anywhere).
+- The button opens an A4 product sheet in a print window: logo, product name, SKU, short description, main image, visible attributes as specifications, and a black footer bar.
+- Logo per brand: uses the product's brand image (Products → Brands) when set, otherwise the logo you choose, otherwise the site logo.
+- Footer bar: optional icon and three lines (e.g. "MADE IN" / "CANADA" / "Since 1972"), site address and a disclaimer.
+- Button style: dark, light, or your theme's button style.
+
 ## Installation
 
 1. Download this repository as a ZIP (**Code → Download ZIP**) and rename the folder inside to `oli-catalog-generator` if needed.
 2. WordPress → **Plugins → Add New → Upload Plugin**, then activate.
-3. Go to **WooCommerce → Catalog Generator**.
+3. Go to **WooCommerce → Catalog & Product PDF**.
 
 Requires WooCommerce. US pricing uses [Price Based on Country for WooCommerce](https://wordpress.org/plugins/woocommerce-product-price-based-on-countries/) when installed.
 
