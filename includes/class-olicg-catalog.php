@@ -34,8 +34,24 @@ class OLICG_Catalog {
 			'show_upc'          => 0,
 			'show_brand'        => 1,
 			'section_new_page'  => 0,
+			'sort'              => 'name',
+			'link_products'     => 0,
 			'logo_url'          => '',
 			'fields'            => self::default_fields(),
+		);
+	}
+
+	/**
+	 * Order of the products not arranged by hand.
+	 *
+	 * @return string[] key => admin label
+	 */
+	public static function sort_options() {
+		return array(
+			'name'  => __( 'Name (A–Z)', 'oli-catalog-generator' ),
+			'sku'   => __( 'SKU', 'oli-catalog-generator' ),
+			'menu'  => __( 'Shop order (WooCommerce sorting)', 'oli-catalog-generator' ),
+			'price' => __( 'Price (low to high)', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -124,6 +140,7 @@ class OLICG_Catalog {
 		$settings['prices'] = OLICG_Pricing::sanitize_components( $settings['prices'] );
 		$settings['price_labels'] = self::sanitize_price_labels( $settings['price_labels'] );
 		$settings['fields']       = self::sanitize_fields( $settings['fields'] );
+		$settings['sort']         = isset( self::sort_options()[ $settings['sort'] ] ) ? $settings['sort'] : 'name';
 		return $settings;
 	}
 
@@ -221,7 +238,7 @@ class OLICG_Catalog {
 	 * product's translation; prices, stock and the item ID stay on the selected
 	 * product so dealer costs and arrangements apply to every language.
 	 *
-	 * @return array[] Each: title, eyebrow, path[], items[] (id, product, name, sku, image, brand, prices).
+	 * @return array[] Each: title, eyebrow, path[], items[] (id, product, name, sku, upc, image, brand, prices, url, stock).
 	 */
 	public static function get_sections( array $settings, $region, array $components, $lang = '' ) {
 		$selected = array_map( 'intval', $settings['categories'] );
@@ -283,6 +300,10 @@ class OLICG_Catalog {
 				'has_img' => (bool) $has_image,
 				'brand'   => '' !== $brand || $shown === $product ? $brand : self::brand_name( $product ),
 				'prices'  => $prices,
+				'price'   => self::sort_price( $prices ),
+				'menu'    => $product->get_menu_order(),
+				'url'     => OLICG_I18n::url( $shown->get_permalink(), $lang ),
+				'stock'   => $product->is_in_stock(),
 			);
 		}
 
@@ -294,11 +315,21 @@ class OLICG_Catalog {
 		}
 
 		foreach ( $sections as &$section ) {
-			self::sort_items( $section['items'], $settings['order'] );
+			self::sort_items( $section['items'], $settings['order'], $settings['sort'] );
 		}
 		unset( $section );
 
 		return $sections;
+	}
+
+	/**
+	 * Lowest amount among the printed prices (null = none), for price sorting.
+	 *
+	 * @param array $prices component => { min, max } | null
+	 */
+	public static function sort_price( array $prices ) {
+		$amounts = array_column( array_filter( $prices ), 'min' );
+		return $amounts ? (float) min( $amounts ) : null;
 	}
 
 	/**
@@ -348,13 +379,25 @@ class OLICG_Catalog {
 	}
 
 	/**
-	 * Manually arranged products first (in their saved order), then the rest by name.
+	 * Manually arranged products first (in their saved order), then the rest by $by
+	 * (see sort_options()), ties and missing values by name.
 	 *
-	 * @param array[] $items Each with 'id' and 'name'.
+	 * @param array[] $items Each with 'id' and 'name'; 'sku', 'menu' and 'price' when sorted by them.
 	 */
-	public static function sort_items( array &$items, array $order ) {
+	public static function sort_items( array &$items, array $order, $by = 'name' ) {
 		$position = array_flip( array_map( 'intval', $order ) );
-		usort( $items, static function ( $a, $b ) use ( $position ) {
+		$value    = static function ( array $item ) use ( $by ) {
+			switch ( $by ) {
+				case 'sku':
+					return isset( $item['sku'] ) && '' !== $item['sku'] ? (string) $item['sku'] : null;
+				case 'price':
+					return isset( $item['price'] ) ? (float) $item['price'] : null;
+				case 'menu':
+					return isset( $item['menu'] ) ? (int) $item['menu'] : 0;
+			}
+			return null;
+		};
+		usort( $items, static function ( $a, $b ) use ( $position, $value ) {
 			$pa = isset( $position[ $a['id'] ] ) ? $position[ $a['id'] ] : null;
 			$pb = isset( $position[ $b['id'] ] ) ? $position[ $b['id'] ] : null;
 			if ( null !== $pa && null !== $pb ) {
@@ -363,7 +406,15 @@ class OLICG_Catalog {
 			if ( null !== $pa || null !== $pb ) {
 				return null !== $pa ? -1 : 1;
 			}
-			return strnatcasecmp( remove_accents( $a['name'] ), remove_accents( $b['name'] ) );
+			$va = $value( $a );
+			$vb = $value( $b );
+			if ( null === $va || null === $vb ) {
+				// Products without a SKU / price go last.
+				$cmp = (int) ( null === $va ) - (int) ( null === $vb );
+			} else {
+				$cmp = is_string( $va ) ? strnatcasecmp( $va, $vb ) : $va <=> $vb;
+			}
+			return $cmp ? $cmp : strnatcasecmp( remove_accents( $a['name'] ), remove_accents( $b['name'] ) );
 		} );
 	}
 

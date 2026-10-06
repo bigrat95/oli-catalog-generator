@@ -11,6 +11,9 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Prices: tick any combination of **Cost** (dealer cost), **List** (regular price), **MAP** (sale price) and **End-user** (lowest of list and MAP). Each ticked price gets its own line, or untick all for a catalogue without prices.
 - Price labels: type your own label next to each price (e.g. "Dealer", "MSRP", "Street"); empty uses the default. Custom labels are printed on cards, table headers and the cover, and can be translated in WPML String Translation / Polylang (names "Price label: cost", …) or TranslatePress.
 - Product details: tick **Image**, **Brand**, **SKU** and **UPC** independently.
+- **Clickable PDF**: optionally link product names to their page; the links keep working in the PDF saved from Chrome / Edge.
+- **Sort products by** name, SKU, shop order (WooCommerce sorting) or price. Products dragged into place keep their position.
+- **Spreadsheet (CSV)**: *Save & download spreadsheet*, or the **CSV** button next to each edition — category, product, SKU, UPC, brand, the chosen prices, stock and link, in the catalogue's order (UTF-8, opens in Excel).
   - The brand comes from the field chosen in **Data sources**, else Products → Brands, Perfect Brands, or a `brand` attribute.
   - The UPC comes from the field chosen in **Data sources**, else WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to common barcode meta (`quivers_upc`, `_upc`, `_gtin`…).
 - **Data sources (ACF / custom fields)**: choose the ACF field or meta key holding the dealer cost (CAD), dealer cost (USD), UPC and brand. Your ACF product fields are suggested as you type (fields inside ACF groups too).
@@ -107,6 +110,8 @@ Regular price = list price, sale price = MAP. When only one exists, that one is 
 
 - `olicg_dealer_meta_keys` — override the dealer cost fields chosen in Data sources: `array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' )`.
 - `olicg_logo_url` — the site logo URL used by the cover and the product PDF sheet.
+- `olicg_csv_header` / `olicg_csv_row` — columns of the spreadsheet export (`$row, $item, $section, $region, $lang`).
+- `olicg_translate_url` — product links in another language (TranslatePress and qTranslate-XT are handled; WPML / Polylang use the translated product's permalink).
 - `olicg_us_zone_id` — Price Based on Country zone ID for USD prices (default `usa`, falls back to the first USD zone).
 - `olicg_upc_meta_keys` / `olicg_product_upc` — where the UPC is read from, when WooCommerce's GTIN field is empty.
 - `olicg_capability` — capability required to build and view catalogues (default `manage_woocommerce`).

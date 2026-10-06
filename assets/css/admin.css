@@ -25,7 +25,7 @@
 .olicg-tokens li { margin: 0 0 4px; break-inside: avoid; }
 .olicg-card h3 { margin: 22px 0 6px; font-size: 13px; }
 .olicg-card .olicg-subhead { margin-top: 32px; }
-.olicg-actions { display: flex; gap: 8px; margin-top: 18px; }
+.olicg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .olicg-quick .button { margin: 6px 6px 0 0; }
 .olicg-quick-lang { display: inline-block; min-width: 72px; margin-top: 6px; font-weight: 600; }
 .olicg-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: 16px; }

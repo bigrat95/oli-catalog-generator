@@ -3,7 +3,7 @@
  * Plugin Name: Oli Catalog & Product PDF
  * Plugin URI: https://github.com/bigrat95/oli-catalog-generator
  * Description: Build private, print-ready product catalogues from WooCommerce categories (Canada / US editions, dealer or retail prices, price list tables), plus an optional "Download PDF" product sheet. Works with ACF.
- * Version: 1.14.0
+ * Version: 1.15.0
  * Requires at least: 6.5
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -23,7 +23,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'OLICG_VERSION', '1.14.0' );
+define( 'OLICG_VERSION', '1.15.0' );
 define( 'OLICG_FILE', __FILE__ );
 define( 'OLICG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLICG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

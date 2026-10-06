@@ -108,6 +108,16 @@ foreach ( array( 1, 2, 3 ) as $olicg_n ) {
 }
 
 /**
+ * Product name, linked to its page when "clickable PDF" is on.
+ */
+$olicg_name = static function ( array $olicg_item ) use ( $settings ) {
+	if ( empty( $settings['link_products'] ) || empty( $olicg_item['url'] ) ) {
+		return esc_html( $olicg_item['name'] );
+	}
+	return '<a class="plink" href="' . esc_url( $olicg_item['url'] ) . '" target="_blank" rel="noopener" draggable="false">' . esc_html( $olicg_item['name'] ) . '</a>';
+};
+
+/**
  * Zoomable image box (catalogue cards and price list pictures).
  */
 $olicg_image_box = static function ( array $olicg_item ) use ( $settings, $olicg_layout ) {
@@ -311,7 +321,7 @@ if ( ! empty( $settings['section_new_page'] ) ) {
 											<button type="button" class="card-remove" title="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php esc_attr_e( 'Remove from catalogue', 'oli-catalog-generator' ); ?>">×</button>
 										</span>
 									<?php endif; ?>
-									<?php echo esc_html( $olicg_item[ $olicg_key ] ); ?>
+									<?php echo 'name' === $olicg_key ? $olicg_name( $olicg_item ) : esc_html( $olicg_item[ $olicg_key ] ); // phpcs:ignore WordPress.Security.EscapeOutput -- $olicg_name() escapes. ?>
 								</td>
 							<?php endforeach; ?>
 							<?php foreach ( $olicg_components as $olicg_key => $olicg_label ) : ?>
@@ -361,7 +371,7 @@ if ( ! empty( $settings['section_new_page'] ) ) {
 							<?php if ( ! empty( $settings['show_brand'] ) && '' !== $olicg_item['brand'] ) : ?>
 								<div class="card-brand"><?php echo esc_html( $olicg_item['brand'] ); ?></div>
 							<?php endif; ?>
-							<h3 class="card-title"><?php echo esc_html( $olicg_item['name'] ); ?></h3>
+							<h3 class="card-title"><?php echo $olicg_name( $olicg_item ); // phpcs:ignore WordPress.Security.EscapeOutput -- $olicg_name() escapes. ?></h3>
 							<?php if ( ! empty( $settings['show_sku'] ) && '' !== $olicg_item['sku'] ) : ?>
 								<div class="card-sku"><?php echo esc_html( 'SKU ' . $olicg_item['sku'] ); ?></div>
 							<?php endif; ?>

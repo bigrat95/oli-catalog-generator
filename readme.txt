@@ -4,7 +4,7 @@ Tags: woocommerce, catalog, pdf, product sheet, acf
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ An optional **Download PDF** button gives visitors an A4 product sheet (logo, na
 * **Prices** — any combination of Cost (dealer cost), List (regular price), MAP (sale price) and End-user (lowest of list and MAP), or no prices at all
 * **Your own price labels** — e.g. "Dealer", "MSRP", "Street"
 * **Product details** — image, brand, SKU and UPC, each on or off
+* **Clickable PDF** — product names can link to their page; the links still work in the PDF saved from Chrome or Edge
+* **Spreadsheet export (CSV)** — the same products, order and prices as the catalogue, ready for Excel, Numbers or Google Sheets (dealer price lists, imports)
+* **Sort order** — name, SKU, shop order or price; products you drag into place keep their position
 * **Four layouts** — compact grid (about 30–36 products per page), list (about 34 per page), large cards (9 per page), and a table per category with the pictures you choose below it
 * **Letter or A4**, optional new page per category
 
@@ -86,6 +89,10 @@ Yes. Choose the logo field of your ACF options page in **Cover & pages**, and th
 
 Click **Print / Save as PDF** on the catalogue, then choose **Save as PDF** in Chrome or Edge. Turn on **Background graphics** and turn off **Headers and footers**.
 
+= Can I get the price list as a spreadsheet? =
+
+Yes. Click **Save & download spreadsheet (CSV)**, or a **CSV** button next to each edition. The file lists the category, product, SKU, UPC, brand, the chosen prices, stock status and product link, in the catalogue's order. Developers can change the columns with the `olicg_csv_header` and `olicg_csv_row` filters.
+
 = Does it load Google Fonts? =
 
 Only if you choose Google Fonts in the Design tab. By default the catalogue and the product sheet use installed / system fonts and nothing is loaded from another site.
@@ -107,6 +114,11 @@ The plugin is written in English and fully translatable (text domain `oli-catalo
 The plugin does not collect personal data and does not send data to a third party. If you choose Google Fonts or an external font stylesheet in the Design tab, the browser of whoever opens a catalogue or a product sheet connects to that font service.
 
 == Changelog ==
+
+= 1.15.0 =
+* New: spreadsheet export (CSV) of any edition and language — same products, order and prices as the catalogue
+* New: clickable PDF — optional links from product names to their page, in the catalogue's language
+* New: sort products by name, SKU, shop order or price (hand-arranged products keep their position)
 
 = 1.14.0 =
 * New: Advanced Custom Fields integration — logo from an ACF options page field (image array, ID or URL), and dealer costs, UPC and brand from ACF fields or any custom field (Catalog > Data sources)
@@ -160,6 +172,9 @@ The plugin does not collect personal data and does not send data to a third part
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.15.0 =
+Spreadsheet (CSV) export, clickable PDF links and product sort options.
 
 = 1.14.0 =
 ACF integration (logo and product data fields), lighter catalogue assets and WordPress.org compliance. Requires WordPress 6.5.

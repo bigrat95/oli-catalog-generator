@@ -159,6 +159,24 @@ class OLICG_I18n {
 		return (int) apply_filters( 'olicg_translate_post_id', $translated ? $translated : $post_id, $post_id, $lang, $post_type );
 	}
 
+	/**
+	 * A page URL in $lang. WPML and Polylang already give translated posts their own permalink.
+	 */
+	public static function url( $url, $lang ) {
+		$translated = $url;
+		if ( '' !== $lang && $lang !== self::default_language() ) {
+			if ( 'translatepress' === self::provider() && class_exists( 'TRP_Translate_Press' ) ) {
+				$converter = TRP_Translate_Press::get_trp_instance()->get_component( 'url_converter' );
+				if ( $converter && method_exists( $converter, 'get_url_for_language' ) ) {
+					$translated = (string) $converter->get_url_for_language( $lang, $url, '' );
+				}
+			} elseif ( 'qtranslate' === self::provider() && function_exists( 'qtranxf_convertURL' ) ) {
+				$translated = (string) qtranxf_convertURL( $url, $lang, false, true );
+			}
+		}
+		return (string) apply_filters( 'olicg_translate_url', '' !== $translated ? $translated : $url, $url, $lang, self::provider() );
+	}
+
 	public static function term_id( $term_id, $lang, $taxonomy = 'product_cat' ) {
 		$term_id = (int) $term_id;
 		if ( '' === $lang ) {
