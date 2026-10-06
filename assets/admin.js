@@ -5,6 +5,10 @@
 	}
 
 	$( function () {
+		if ( $.fn.wpColorPicker ) {
+			$( '.olicg-color' ).wpColorPicker();
+		}
+
 		$( '.olicg-section' ).each( function () {
 			syncSection( $( this ) );
 		} );

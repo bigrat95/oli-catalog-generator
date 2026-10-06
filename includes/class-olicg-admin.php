@@ -15,6 +15,19 @@ class OLICG_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'admin_post_olicg_save', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_post_olicg_render', array( __CLASS__, 'handle_render' ) );
+		add_action( 'admin_post_nopriv_olicg_render', array( __CLASS__, 'deny' ) );
+		add_action( 'admin_post_olicg_save_design', array( 'OLICG_Design', 'handle_save' ) );
+	}
+
+	/**
+	 * Capability needed to build catalogues (they contain dealer pricing).
+	 */
+	public static function cap() {
+		return (string) apply_filters( 'olicg_capability', self::CAP );
+	}
+
+	public static function deny() {
+		wp_die( esc_html__( 'You are not allowed to view this catalogue.', 'oli-catalog-generator' ), '', array( 'response' => 403 ) );
 	}
 
 	public static function menu() {
@@ -22,7 +35,7 @@ class OLICG_Admin {
 			'woocommerce',
 			__( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ),
 			__( 'Catalog & Product PDF', 'oli-catalog-generator' ),
-			self::CAP,
+			self::cap(),
 			self::SLUG,
 			array( __CLASS__, 'render_page' )
 		);
@@ -33,9 +46,10 @@ class OLICG_Admin {
 			return;
 		}
 		wp_enqueue_style( 'woocommerce_admin_styles' );
+		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wc-enhanced-select' );
 		wp_enqueue_style( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.css', array(), OLICG_VERSION );
-		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'wc-enhanced-select' ), OLICG_VERSION, true );
+		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
 	}
 
 	public static function render_url( $region, $price_type ) {
@@ -53,7 +67,7 @@ class OLICG_Admin {
 	}
 
 	public static function handle_save() {
-		if ( ! current_user_can( self::CAP ) ) {
+		if ( ! current_user_can( self::cap() ) ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'oli-catalog-generator' ), 403 );
 		}
 		check_admin_referer( 'olicg_save' );
@@ -111,8 +125,8 @@ class OLICG_Admin {
 	}
 
 	public static function handle_render() {
-		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'oli-catalog-generator' ), 403 );
+		if ( ! is_user_logged_in() || ! current_user_can( self::cap() ) ) {
+			self::deny();
 		}
 		check_admin_referer( 'olicg_render' );
 
@@ -128,18 +142,26 @@ class OLICG_Admin {
 		$currency = $regions[ $region ]['currency'];
 		$logo_url = OLICG_Catalog::logo_url( $settings );
 
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
 		nocache_headers();
+		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private' );
+		header( 'X-Robots-Tag: noindex, nofollow, noarchive' );
+		header( 'Referrer-Policy: no-referrer' );
+		header( 'X-Frame-Options: SAMEORIGIN' );
 		header( 'Content-Type: text/html; charset=UTF-8' );
 		include OLICG_PLUGIN_DIR . 'templates/catalog.php';
 		exit;
 	}
 
 	public static function render_page() {
-		if ( ! current_user_can( self::CAP ) ) {
+		if ( ! current_user_can( self::cap() ) ) {
 			return;
 		}
 
-		$tab  = isset( $_GET['tab'] ) && 'pdf' === $_GET['tab'] ? 'pdf' : 'catalog';
+		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'catalog';
+		$tab  = in_array( $tab, array( 'catalog', 'pdf', 'design' ), true ) ? $tab : 'catalog';
 		$base = admin_url( 'admin.php?page=' . self::SLUG );
 		?>
 		<div class="wrap olicg">
@@ -147,6 +169,7 @@ class OLICG_Admin {
 			<nav class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( $base ); ?>" class="nav-tab<?php echo 'catalog' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Catalog', 'oli-catalog-generator' ); ?></a>
 				<a href="<?php echo esc_url( $base . '&tab=pdf' ); ?>" class="nav-tab<?php echo 'pdf' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Product PDF', 'oli-catalog-generator' ); ?></a>
+				<a href="<?php echo esc_url( $base . '&tab=design' ); ?>" class="nav-tab<?php echo 'design' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Design', 'oli-catalog-generator' ); ?></a>
 			</nav>
 
 			<?php if ( isset( $_GET['saved'] ) ) : ?>
@@ -156,6 +179,8 @@ class OLICG_Admin {
 			<?php
 			if ( 'pdf' === $tab ) {
 				OLICG_Product_PDF::render_settings();
+			} elseif ( 'design' === $tab ) {
+				OLICG_Design::render_settings();
 			} else {
 				self::render_catalog_tab();
 			}
@@ -179,6 +204,7 @@ class OLICG_Admin {
 		$included = count( array_filter( $rows, static function ( $row ) { return $row['included']; } ) );
 		?>
 			<p class="olicg-intro"><?php esc_html_e( 'Pick categories, remove or add products, choose the edition and price type, then generate a print-ready catalogue (Print → Save as PDF).', 'oli-catalog-generator' ); ?></p>
+			<p class="olicg-private"><?php esc_html_e( 'Private: catalogues are only generated here in the admin. They never appear on your website, and catalogue links only open for logged-in shop managers and administrators.', 'oli-catalog-generator' ); ?></p>
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="olicg_save">

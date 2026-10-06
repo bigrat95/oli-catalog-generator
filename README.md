@@ -11,6 +11,16 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Three layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page) and **Large cards** (9 per page).
 - Letter or A4, optional new page per category, page numbers and running footer.
 - Print → Save as PDF from Chrome or Edge.
+- **Private:** catalogues are only built in the admin. Links require a logged-in user with `manage_woocommerce` (shop managers and administrators) plus a valid nonce; anyone else gets a 403. Responses are sent with no-cache / noindex headers. Nothing is published on the front end.
+
+## Design
+
+**WooCommerce → Catalog & Product PDF → Design** controls the look of both the catalogue and the product PDF sheet:
+
+- Fonts for headings, body, labels & prices, and the product PDF sheet, loaded from Google Fonts by name, from a stylesheet URL (Adobe Fonts kit, self-hosted `@font-face` CSS…), or from installed/system fonts.
+- Italic headings on/off, heading weight, uppercase labels on/off.
+- Colours: text, secondary text, borders, image background, prices, cover band / PDF footer bar and its text.
+- Custom CSS, added to the catalogue and the PDF sheet.
 
 ## Product PDF (optional)
 
@@ -43,6 +53,7 @@ Regular price = list price, sale price = MAP. When only one exists, that one is 
 
 - `olicg_dealer_meta_keys` — change the dealer cost meta keys: `array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' )`.
 - `olicg_us_zone_id` — Price Based on Country zone ID for USD prices (default `usa`, falls back to the first USD zone).
+- `olicg_capability` — capability required to build and view catalogues (default `manage_woocommerce`).
 - `olicg_fonts_css_file` — path to an `@font-face` CSS file used by the catalogue (default: the active theme's `assets/fonts/fonts-local.css`).
 
 ## Printing tips

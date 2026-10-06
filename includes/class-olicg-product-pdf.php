@@ -74,9 +74,14 @@ class OLICG_Product_PDF {
 	public static function register_assets() {
 		wp_register_style( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/product-pdf.css', array(), OLICG_VERSION );
 		wp_register_script( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/product-pdf.js', array(), OLICG_VERSION, true );
+		$design = OLICG_Design::get_settings();
 		wp_localize_script( 'olicg-product-pdf', 'olicgProductPdf', array(
-			'sheetLabel' => __( 'Product Sheet', 'oli-catalog-generator' ),
+			'sheetLabel'   => __( 'Product Sheet', 'oli-catalog-generator' ),
 			'popupBlocked' => __( 'Please allow pop-ups for this site to download the PDF.', 'oli-catalog-generator' ),
+			'fontUrls'     => array_map( 'esc_url_raw', OLICG_Design::font_urls( array( 'pdf' ), $design ) ),
+			'fontFamily'   => OLICG_Design::stacks( $design )['pdf'],
+			'textColor'    => $design['color_text'],
+			'customCss'    => OLICG_Design::custom_css( $design ),
 		) );
 	}
 
@@ -167,7 +172,7 @@ class OLICG_Product_PDF {
 	}
 
 	public static function handle_save() {
-		if ( ! current_user_can( OLICG_Admin::CAP ) ) {
+		if ( ! current_user_can( OLICG_Admin::cap() ) ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'oli-catalog-generator' ), 403 );
 		}
 		check_admin_referer( 'olicg_save_pdf' );

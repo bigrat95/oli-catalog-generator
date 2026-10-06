@@ -20,15 +20,18 @@
 		var title = ( button.getAttribute( 'data-olicg-file' ) || 'Product' ) + ' - ' + ( i18n.sheetLabel || 'Product Sheet' );
 		var html = '<!DOCTYPE html><html><head><meta charset="utf-8">';
 		html += '<title>' + escapeHtml( title ) + '</title>';
-		html += '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">';
+		( i18n.fontUrls || [] ).forEach( function ( url ) {
+			html += '<link href="' + escapeHtml( url ).replace( /"/g, '&quot;' ) + '" rel="stylesheet">';
+		} );
 		html += '<style>';
 		html += '* { box-sizing: border-box; margin: 0; padding: 0; }';
-		html += 'html, body { height: 100%; font-family: "Space Grotesk", Arial, sans-serif; color: #09090b; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }';
+		html += 'html, body { height: 100%; font-family: ' + ( i18n.fontFamily || 'Arial, sans-serif' ) + '; color: ' + ( i18n.textColor || '#09090b' ) + '; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }';
 		html += 'table { border-collapse: collapse; }';
 		html += 'td { vertical-align: top; }';
 		html += 'img { max-width: 100%; height: auto; }';
 		html += '@page { margin: 0; size: A4 portrait; }';
 		html += '.olicg-pdf-page { width: 210mm; min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; }';
+		html += ( i18n.customCss || '' ).replace( /<\/?style/gi, '' );
 		html += '</style></head><body>';
 		html += '<div class="olicg-pdf-page">' + sheet.innerHTML + '</div>';
 		html += '<script>window.onload = function () { setTimeout(function () { window.print(); }, 500); };<\/script>';

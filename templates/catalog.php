@@ -12,6 +12,10 @@ $olicg_fonts_css  = is_readable( $olicg_fonts_file )
 	? str_replace( '__FONTS__', esc_url( get_template_directory_uri() . '/assets/fonts' ), (string) file_get_contents( $olicg_fonts_file ) )
 	: '';
 
+$olicg_design    = OLICG_Design::get_settings();
+$olicg_stacks    = OLICG_Design::stacks( $olicg_design );
+$olicg_mono_css  = str_replace( array( '<', '>', '{', '}', ';' ), '', $olicg_stacks['mono'] );
+
 $olicg_is_dealer = in_array( $price_type, array( 'dealer', 'all' ), true );
 $olicg_components = OLICG_Pricing::components( $price_type );
 $olicg_multi     = count( $olicg_components ) > 1;
@@ -32,28 +36,25 @@ $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
 <title><?php echo esc_html( $settings['title'] . ' ' . $olicg_year . ' — ' . $olicg_market . ' (' . $types[ $price_type ] . ')' ); ?></title>
+<?php foreach ( OLICG_Design::font_urls( array( 'heading', 'body', 'mono' ), $olicg_design ) as $olicg_font_url ) : ?>
+<link rel="stylesheet" href="<?php echo esc_url( $olicg_font_url ); ?>">
+<?php endforeach; ?>
 <style>
 <?php echo $olicg_fonts_css; // phpcs:ignore WordPress.Security.EscapeOutput -- theme CSS file. ?>
 
 :root {
-	--ink: #09090b;
-	--muted: #71717a;
-	--line: #e4e4e7;
-	--paper: #fcfcfc;
-	--tile: #f4f4f2;
-	--serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-	--sans: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
-	--mono: 'Space Mono', ui-monospace, Menlo, Consolas, monospace;
+<?php echo OLICG_Design::css_vars( $olicg_design ); // phpcs:ignore WordPress.Security.EscapeOutput -- sanitized hex colours and font names. ?>
 	--cols: <?php echo (int) $olicg_columns; ?>;
 }
 
 @page {
 	size: <?php echo 'a4' === $olicg_paper ? 'A4' : 'letter'; ?> portrait;
 	margin: 0.5in 0.45in 0.6in;
-	@bottom-left { content: "<?php echo $olicg_footer_css; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped for a CSS string above. ?>"; font: 7pt 'Space Mono', monospace; color: #71717a; }
-	@bottom-right { content: counter(page); font: 700 8pt 'Space Mono', monospace; color: #09090b; }
+	@bottom-left { content: "<?php echo $olicg_footer_css; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped for a CSS string above. ?>"; font: 7pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_muted'] ); ?>; }
+	@bottom-right { content: counter(page); font: 700 8pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_text'] ); ?>; }
 }
 @page :first {
 	@bottom-left { content: none; }
@@ -77,12 +78,12 @@ body {
 	padding: 12px 24px; background: #000; color: #fff;
 	font: 12px var(--mono); letter-spacing: .04em;
 }
-.toolbar strong { text-transform: uppercase; letter-spacing: .12em; }
+.toolbar strong { text-transform: var(--label-case); letter-spacing: .12em; }
 .toolbar .hint { color: #a1a1aa; }
 .toolbar button {
 	flex-shrink: 0; white-space: nowrap;
 	background: #fff; color: #000; border: 0; padding: 10px 18px; cursor: pointer;
-	font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .12em;
+	font: 700 12px var(--mono); text-transform: var(--label-case); letter-spacing: .12em;
 }
 .toolbar button:hover { background: #e4e4e7; }
 
@@ -102,17 +103,17 @@ body {
 .cover-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--ink); padding-bottom: 18px; }
 .cover-logo { height: 54px; width: auto; }
 .cover-wordmark { font: 700 28px var(--sans); letter-spacing: .2em; }
-.cover-meta-top { text-align: right; font: 9pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .12em; line-height: 1.7; }
+.cover-meta-top { text-align: right; font: 9pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .12em; line-height: 1.7; }
 .cover-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; }
-.eyebrow { font: 700 9pt var(--mono); text-transform: uppercase; letter-spacing: .25em; color: var(--muted); }
-.cover-title { font: italic 400 58pt/1.02 var(--serif); margin: 16px 0 0; letter-spacing: -.01em; }
-.cover-year { font: italic 400 58pt/1.02 var(--serif); color: var(--muted); }
+.eyebrow { font: 700 9pt var(--mono); text-transform: var(--label-case); letter-spacing: .25em; color: var(--muted); }
+.cover-title { font: var(--heading-style) var(--heading-weight) 58pt/1.02 var(--serif); margin: 16px 0 0; letter-spacing: -.01em; }
+.cover-year { font: var(--heading-style) var(--heading-weight) 58pt/1.02 var(--serif); color: var(--muted); }
 .cover-band {
-	background: var(--ink); color: #fff; padding: 22px 26px;
+	background: var(--band); color: var(--band-text); padding: 22px 26px;
 	display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
 }
-.cover-band .label { font: 7.5pt var(--mono); text-transform: uppercase; letter-spacing: .2em; color: #a1a1aa; }
-.cover-band .value { font: 700 12pt var(--mono); margin-top: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.cover-band .label { font: 7.5pt var(--mono); text-transform: var(--label-case); letter-spacing: .2em; opacity: .65; }
+.cover-band .value { font: 700 12pt var(--mono); margin-top: 6px; text-transform: var(--label-case); letter-spacing: .06em; }
 .cover-note { margin-top: 14px; font: 8pt var(--mono); color: var(--muted); line-height: 1.6; }
 
 /* Sections */
@@ -125,8 +126,8 @@ body {
 	border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 0.16in;
 	break-after: avoid;
 }
-.section-title { font: italic 400 24pt/1.05 var(--serif); margin: 2px 0 0; }
-.section-count { font: 8pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .15em; white-space: nowrap; }
+.section-title { font: var(--heading-style) var(--heading-weight) 24pt/1.05 var(--serif); margin: 2px 0 0; }
+.section-count { font: 8pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .15em; white-space: nowrap; }
 
 /* Product grid */
 .grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0.16in; }
@@ -138,17 +139,17 @@ body {
 	font: 500 <?php echo 4 === $olicg_columns ? '8pt' : '9pt'; ?>/1.3 var(--sans); margin: 0;
 	display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-.card-sku { font: 6.5pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
+.card-sku { font: 6.5pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .1em; margin-top: 4px; }
 .card-price { margin-top: auto; padding-top: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
 .card-price .amount { font: 700 <?php echo 4 === $olicg_columns ? '10pt' : '11.5pt'; ?> var(--mono); }
 .card-price .currency { font: 6.5pt var(--mono); color: var(--muted); letter-spacing: .12em; }
-.card-price .na { font: 7pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
-.card-brand { font: 700 6.5pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 3px; }
+.card-price .na { font: 7pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .1em; }
+.card-brand { font: 700 6.5pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .14em; margin-bottom: 3px; }
 .card-prices { margin-top: auto; padding-top: 6px; display: grid; gap: 1px; }
 .price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; border-top: 1px dotted var(--line); padding-top: 2px; }
-.price-row .lbl { font: 6.5pt var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+.price-row .lbl { font: 6.5pt var(--mono); color: var(--muted); text-transform: var(--label-case); letter-spacing: .12em; }
 .price-row .amt { font: 700 9pt var(--mono); white-space: nowrap; }
-.price-row:first-child .amt { color: var(--ink); }
+.card-price .amount, .price-row .amt { color: var(--price); }
 
 /* Compact grid: small images, dense rows */
 .layout-compact .section + .section { margin-top: 0.22in; }
@@ -204,6 +205,8 @@ body {
 	.toolbar { display: none; }
 	.doc { width: auto; margin: 0; padding: 0; box-shadow: none; }
 }
+
+<?php echo OLICG_Design::custom_css( $olicg_design ); // phpcs:ignore WordPress.Security.EscapeOutput -- tags stripped. ?>
 </style>
 </head>
 <body class="layout-<?php echo esc_attr( $olicg_layout ); ?>">

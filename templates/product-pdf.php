@@ -16,9 +16,14 @@ $olicg_pdf_attrs = array_filter( $product->get_attributes(), static function ( $
 } );
 $olicg_pdf_logo  = OLICG_Product_PDF::logo_for( $product, $settings );
 $olicg_pdf_lines = array_filter( array( $settings['footer_line1'], $settings['footer_line2'] ) );
-$olicg_pdf_font  = "'Space Grotesk', 'Segoe UI', Arial, sans-serif";
+$olicg_pdf_d     = OLICG_Design::get_settings();
+$olicg_pdf_font  = OLICG_Design::stacks( $olicg_pdf_d )['pdf'];
+$olicg_pdf_ink   = $olicg_pdf_d['color_text'];
+$olicg_pdf_muted = $olicg_pdf_d['color_muted'];
+$olicg_pdf_band  = $olicg_pdf_d['color_band'];
+$olicg_pdf_btext = $olicg_pdf_d['color_band_text'];
 ?>
-<div id="olicg-pdf-content-<?php echo esc_attr( $product->get_id() ); ?>" class="olicg-pdf-content" aria-hidden="true" style="position: absolute; left: -9999px; top: 0; font-family: <?php echo esc_attr( $olicg_pdf_font ); ?>; color: #09090b; background: #fff; width: 210mm; min-height: 297mm; box-sizing: border-box; display: flex; flex-direction: column;">
+<div id="olicg-pdf-content-<?php echo esc_attr( $product->get_id() ); ?>" class="olicg-pdf-content" aria-hidden="true" style="position: absolute; left: -9999px; top: 0; font-family: <?php echo esc_attr( $olicg_pdf_font ); ?>; color: <?php echo esc_attr( $olicg_pdf_ink ); ?>; background: #fff; width: 210mm; min-height: 297mm; box-sizing: border-box; display: flex; flex-direction: column;">
 
 	<div style="flex: 1; padding: 40px 50px 30px 50px;">
 		<table style="width: 100%; margin-bottom: 30px;">
@@ -32,14 +37,14 @@ $olicg_pdf_font  = "'Space Grotesk', 'Segoe UI', Arial, sans-serif";
 						<?php endif; ?>
 					</div>
 
-					<div style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #09090b; line-height: 1.2;"><?php echo esc_html( $product->get_name() ); ?></div>
+					<div style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: <?php echo esc_attr( $olicg_pdf_ink ); ?>; line-height: 1.2;"><?php echo esc_html( $product->get_name() ); ?></div>
 
 					<?php if ( $product->get_sku() ) : ?>
-						<div style="font-size: 13px; color: #71717a; margin-bottom: 20px;"><?php esc_html_e( 'sku:', 'oli-catalog-generator' ); ?> <?php echo esc_html( $product->get_sku() ); ?></div>
+						<div style="font-size: 13px; color: <?php echo esc_attr( $olicg_pdf_muted ); ?>; margin-bottom: 20px;"><?php esc_html_e( 'sku:', 'oli-catalog-generator' ); ?> <?php echo esc_html( $product->get_sku() ); ?></div>
 					<?php endif; ?>
 
 					<?php if ( $olicg_pdf_desc ) : ?>
-						<div style="font-size: 11px; line-height: 1.6; color: #52525b; margin-bottom: 25px;"><?php echo esc_html( $olicg_pdf_desc ); ?></div>
+						<div style="font-size: 11px; line-height: 1.6; color: <?php echo esc_attr( $olicg_pdf_muted ); ?>; margin-bottom: 25px;"><?php echo esc_html( $olicg_pdf_desc ); ?></div>
 					<?php endif; ?>
 
 					<?php if ( $olicg_pdf_image ) : ?>
@@ -62,8 +67,8 @@ $olicg_pdf_font  = "'Space Grotesk', 'Segoe UI', Arial, sans-serif";
 								}
 								?>
 								<div style="margin-bottom: 4px;">
-									<span style="font-weight: 600; color: #09090b;"><?php echo esc_html( wc_attribute_label( $olicg_attr->get_name(), $product ) ); ?> :</span>
-									<span style="color: #09090b; font-weight: 400;">&nbsp;<?php echo esc_html( implode( ', ', $olicg_vals ) ); ?></span>
+									<span style="font-weight: 600; color: <?php echo esc_attr( $olicg_pdf_ink ); ?>;"><?php echo esc_html( wc_attribute_label( $olicg_attr->get_name(), $product ) ); ?> :</span>
+									<span style="color: <?php echo esc_attr( $olicg_pdf_ink ); ?>; font-weight: 400;">&nbsp;<?php echo esc_html( implode( ', ', $olicg_vals ) ); ?></span>
 								</div>
 							<?php endforeach; ?>
 						</div>
@@ -73,7 +78,7 @@ $olicg_pdf_font  = "'Space Grotesk', 'Segoe UI', Arial, sans-serif";
 		</table>
 	</div>
 
-	<div style="background-color: #09090b; color: #fff; padding: 25px 50px; margin-top: auto;">
+	<div style="background-color: <?php echo esc_attr( $olicg_pdf_band ); ?>; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; padding: 25px 50px; margin-top: auto;">
 		<table style="width: 100%;">
 			<tr>
 				<td style="vertical-align: middle; width: 50%;">
@@ -81,27 +86,27 @@ $olicg_pdf_font  = "'Space Grotesk', 'Segoe UI', Arial, sans-serif";
 						<tr>
 							<?php if ( $settings['footer_icon'] ) : ?>
 								<td style="vertical-align: middle; padding-right: 12px;">
-									<img src="<?php echo esc_url( $settings['footer_icon'] ); ?>" alt="" style="width: 40px; height: 40px; filter: brightness(0) invert(1);">
+									<img src="<?php echo esc_url( $settings['footer_icon'] ); ?>" alt="" style="width: 40px; height: 40px; <?php echo '#ffffff' === strtolower( $olicg_pdf_btext ) ? 'filter: brightness(0) invert(1);' : ''; ?>">
 								</td>
 							<?php endif; ?>
 							<td style="vertical-align: middle;">
 								<?php if ( $olicg_pdf_lines ) : ?>
 									<?php foreach ( $olicg_pdf_lines as $olicg_line ) : ?>
-										<div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; color: #fff;"><?php echo esc_html( $olicg_line ); ?></div>
+										<div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>;"><?php echo esc_html( $olicg_line ); ?></div>
 									<?php endforeach; ?>
 								<?php elseif ( ! $settings['footer_line3'] ) : ?>
-									<div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; color: #fff;"><?php echo esc_html( strtoupper( get_bloginfo( 'name' ) ) ); ?></div>
+									<div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>;"><?php echo esc_html( strtoupper( get_bloginfo( 'name' ) ) ); ?></div>
 								<?php endif; ?>
 								<?php if ( $settings['footer_line3'] ) : ?>
-									<div style="font-size: 10px; color: #a1a1aa; margin-top: 3px;"><?php echo esc_html( $settings['footer_line3'] ); ?></div>
+									<div style="font-size: 10px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; opacity: .65; margin-top: 3px;"><?php echo esc_html( $settings['footer_line3'] ); ?></div>
 								<?php endif; ?>
 							</td>
 						</tr>
 					</table>
 				</td>
 				<td style="text-align: right; vertical-align: middle; width: 50%;">
-					<div style="font-size: 11px; color: #fff; font-weight: 500;"><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></div>
-					<div style="font-size: 9px; color: #a1a1aa; margin-top: 3px;">©<?php echo esc_html( wp_date( 'Y' ) ); ?><?php echo $settings['disclaimer'] ? ' - ' . esc_html( $settings['disclaimer'] ) : ''; ?></div>
+					<div style="font-size: 11px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; font-weight: 500;"><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></div>
+					<div style="font-size: 9px; color: <?php echo esc_attr( $olicg_pdf_btext ); ?>; opacity: .65; margin-top: 3px;">©<?php echo esc_html( wp_date( 'Y' ) ); ?><?php echo $settings['disclaimer'] ? ' - ' . esc_html( $settings['disclaimer'] ) : ''; ?></div>
 				</td>
 			</tr>
 		</table>
