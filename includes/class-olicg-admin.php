@@ -261,7 +261,7 @@ class OLICG_Admin {
 			<h1><?php esc_html_e( 'Oli Catalog & Product PDF', 'oli-catalog-generator' ); ?></h1>
 			<nav class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( $base ); ?>" class="nav-tab<?php echo 'catalog' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Catalog', 'oli-catalog-generator' ); ?></a>
-				<a href="<?php echo esc_url( $base . '&tab=cover' ); ?>" class="nav-tab<?php echo 'cover' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Cover page', 'oli-catalog-generator' ); ?></a>
+				<a href="<?php echo esc_url( $base . '&tab=cover' ); ?>" class="nav-tab<?php echo 'cover' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Cover & pages', 'oli-catalog-generator' ); ?></a>
 				<a href="<?php echo esc_url( $base . '&tab=pdf' ); ?>" class="nav-tab<?php echo 'pdf' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Product PDF', 'oli-catalog-generator' ); ?></a>
 				<a href="<?php echo esc_url( $base . '&tab=design' ); ?>" class="nav-tab<?php echo 'design' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Design', 'oli-catalog-generator' ); ?></a>
 			</nav>
@@ -419,8 +419,8 @@ class OLICG_Admin {
 							<?php
 							printf(
 								/* translators: %s: link to the Cover page tab */
-								esc_html__( 'Logo, cover texts, cover image and background: %s.', 'oli-catalog-generator' ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=cover' ) ) . '">' . esc_html__( 'Cover page tab', 'oli-catalog-generator' ) . '</a>'
+								esc_html__( 'Logo, cover texts, cover image, background, footer and page numbers: %s.', 'oli-catalog-generator' ),
+								'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&tab=cover' ) ) . '">' . esc_html__( 'Cover & pages tab', 'oli-catalog-generator' ) . '</a>'
 							);
 							?>
 						</p>

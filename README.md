@@ -29,9 +29,9 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Product images: **Blend** (the photo melts into the image background colour — best for photos on white), **Solid colour** behind the image (best for transparent PNGs) or **No background**, plus an optional soft or strong drop shadow.
 - Custom CSS, added to the catalogue and the PDF sheet.
 
-## Cover page
+## Cover & pages
 
-**WooCommerce → Catalog & Product PDF → Cover page**:
+**WooCommerce → Catalog & Product PDF → Cover & pages**:
 
 - **Designed cover**, **Full-page image** (your own artwork printed edge to edge, fill or fit) or **No cover**.
 - Every cover text is editable: company name, the two top-right lines, the small line above the title, title, second title line, the three information-band boxes (label + value) and the note. Empty = automatic text; a single dash (`-`) prints nothing. Placeholders: `{title}`, `{year}`, `{date}`, `{site}`, `{domain}`, `{market}`, `{currency}`, `{prices}`, `{edition_label}`, `{count}`, `{note}`.
@@ -39,6 +39,8 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Logo (media library picker, height in px) — also used by the product PDF sheet when it has no logo of its own.
 - Background colour and/or background image (with an adjustable colour overlay for legibility), cover text and secondary text colours — a coloured or image background prints edge to edge.
 - Title font and size (empty = the Design tab headings font).
+- Footer & page numbers: footer text on every page (editable, same placeholders), page number text (`{page}`, `{pages}` — e.g. "Page {page} of {pages}"), position (bottom right / centre / left), footer size, each on/off. Untick "Count the cover as page 1" to start numbering on the first product page (`{pages}` still counts the cover).
+- Closing text at the end of the catalogue: editable or hidden.
 - Custom texts are translatable with WPML String Translation / Polylang (names "Cover: …") or TranslatePress.
 
 ## Product PDF (optional)

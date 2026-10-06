@@ -35,7 +35,7 @@ msgid "Accessories Catalogue"
 msgstr "Catalogue d’accessoires"
 
 #: includes/class-olicg-admin.php:142
-#: includes/class-olicg-cover.php:189
+#: includes/class-olicg-cover.php:241
 #: includes/class-olicg-design.php:174
 #: includes/class-olicg-product-pdf.php:215
 msgid "You are not allowed to do this."
@@ -94,7 +94,7 @@ msgid "2. Edition"
 msgstr "2. Édition"
 
 #: includes/class-olicg-admin.php:354
-#: includes/class-olicg-cover.php:78
+#: includes/class-olicg-cover.php:95
 msgid "Market"
 msgstr "Marché"
 
@@ -170,7 +170,7 @@ msgstr "Produit"
 
 #: includes/class-olicg-admin.php:387
 #: includes/class-olicg-admin.php:470
-#: templates/catalog.php:470
+#: templates/catalog.php:494
 msgid "SKU"
 msgstr "UGS"
 
@@ -203,8 +203,8 @@ msgid "Manual"
 msgstr "Manuel"
 
 #: includes/class-olicg-admin.php:502
-#: templates/catalog.php:516
-#: templates/catalog.php:561
+#: templates/catalog.php:540
+#: templates/catalog.php:585
 msgid "Remove from catalogue"
 msgstr "Retirer du catalogue"
 
@@ -277,7 +277,7 @@ msgstr "Bordures"
 msgid "Image background"
 msgstr "Fond des images"
 
-#: includes/class-olicg-cover.php:80
+#: includes/class-olicg-cover.php:97
 #: includes/class-olicg-design.php:67
 msgid "Prices"
 msgstr "Prix"
@@ -366,7 +366,7 @@ msgstr "Enregistrer l’apparence"
 msgid "Reset fonts and colours to the defaults?"
 msgstr "Rétablir les polices et couleurs par défaut?"
 
-#: includes/class-olicg-cover.php:362
+#: includes/class-olicg-cover.php:451
 #: includes/class-olicg-design.php:304
 msgid "Reset to defaults"
 msgstr "Rétablir les valeurs par défaut"
@@ -527,10 +527,10 @@ msgid "Suggested retail prices"
 msgstr "Prix de détail suggérés"
 
 #. translators: %d: number of products
-#: templates/catalog.php:393
-#: templates/catalog.php:555
-#: templates/catalog.php:639
-#: templates/catalog.php:641
+#: templates/catalog.php:417
+#: templates/catalog.php:579
+#: templates/catalog.php:642
+#: templates/catalog.php:644
 msgid "%d product"
 msgid_plural "%d products"
 msgstr[0] "%d produit"
@@ -541,60 +541,60 @@ msgstr[1] "%d produits"
 msgid "F j, Y"
 msgstr "j F Y"
 
-#: templates/catalog.php:399
+#: templates/catalog.php:423
 msgid "Drag products to reorder · hover and click × to remove · drag an image’s corner to zoom it, then drag the image to position it (double-click resets) — changes save automatically."
 msgstr "Glissez les produits pour les réordonner · survolez et cliquez sur × pour retirer · glissez le coin d’une image pour la zoomer, puis glissez l’image pour la positionner (double-clic pour réinitialiser) — les changements sont enregistrés automatiquement."
 
-#: templates/catalog.php:404
+#: templates/catalog.php:428
 msgid "Chrome / Edge → Print → Save as PDF. Margins: Default · Headers and footers: off · Background graphics: on."
 msgstr "Chrome / Edge → Imprimer → Enregistrer en PDF. Marges : par défaut · En-têtes et pieds de page : désactivés · Graphiques d’arrière-plan : activés."
 
-#: templates/catalog.php:407
+#: templates/catalog.php:431
 msgid "Undo remove"
 msgstr "Annuler le retrait"
 
-#: templates/catalog.php:408
+#: templates/catalog.php:432
 msgid "Print / Save as PDF"
 msgstr "Imprimer / Enregistrer en PDF"
 
-#: includes/class-olicg-cover.php:82
+#: includes/class-olicg-cover.php:99
 msgid "Products"
 msgstr "Produits"
 
-#: templates/catalog.php:46
+#: templates/catalog.php:44
 msgid "Confidential dealer pricing — not for public distribution. Prices subject to change without notice."
 msgstr "Prix détaillant confidentiels — ne pas distribuer au public. Prix sujets à changement sans préavis."
 
-#: templates/catalog.php:48
+#: templates/catalog.php:46
 msgid "Suggested retail prices. Prices and availability subject to change without notice."
 msgstr "Prix de détail suggérés. Prix et disponibilité sujets à changement sans préavis."
 
-#: templates/catalog.php:463
+#: templates/catalog.php:487
 msgid "No products match this selection."
 msgstr "Aucun produit ne correspond à cette sélection."
 
-#: templates/catalog.php:95
+#: templates/catalog.php:117
 msgid "Drag to zoom the image · double-click the image to reset"
 msgstr "Glissez pour zoomer l’image · double-cliquez sur l’image pour réinitialiser"
 
-#: templates/catalog.php:593
+#: templates/catalog.php:617
 msgid "Price on request"
 msgstr "Prix sur demande"
 
 #. translators: 1: site name, 2: currency, 3: date, 4: site URL
-#: templates/catalog.php:611
+#: templates/catalog.php:72
 msgid "© %1$s. All prices in %2$s, current as of %3$s. Specifications, prices and availability subject to change without notice. %4$s"
 msgstr "© %1$s. Tous les prix sont en %2$s, en vigueur au %3$s. Spécifications, prix et disponibilité sujets à changement sans préavis. %4$s"
 
-#: templates/catalog.php:642
+#: templates/catalog.php:645
 msgid "Saving…"
 msgstr "Enregistrement…"
 
-#: templates/catalog.php:643
+#: templates/catalog.php:646
 msgid "Saved ✓"
 msgstr "Enregistré ✓"
 
-#: templates/catalog.php:644
+#: templates/catalog.php:647
 msgid "Could not save — reload and try again."
 msgstr "Échec de l’enregistrement — rechargez la page et réessayez."
 
@@ -635,12 +635,12 @@ msgid "Image"
 msgstr "Image"
 
 #: includes/class-olicg-admin.php:386
-#: templates/catalog.php:476
+#: templates/catalog.php:500
 msgid "Brand"
 msgstr "Marque"
 
 #: includes/class-olicg-admin.php:388
-#: templates/catalog.php:473
+#: templates/catalog.php:497
 msgid "UPC"
 msgstr "UPC"
 
@@ -652,12 +652,12 @@ msgstr "Masquer les produits sans aucun des prix choisis"
 msgid "Product catalogue"
 msgstr "Catalogue de produits"
 
-#: templates/catalog.php:50
+#: templates/catalog.php:48
 msgid "Specifications and availability subject to change without notice."
 msgstr "Spécifications et disponibilité sujettes à changement sans préavis."
 
 #. translators: 1: site name, 2: date, 3: site URL
-#: templates/catalog.php:620
+#: templates/catalog.php:80
 msgid "© %1$s. Current as of %2$s. Specifications and availability subject to change without notice. %3$s"
 msgstr "© %1$s. En vigueur au %2$s. Spécifications et disponibilité sujettes à changement sans préavis. %3$s"
 
@@ -699,39 +699,39 @@ msgstr "CDN"
 msgid "USA"
 msgstr "É.-U."
 
-#: templates/catalog.php:43
+#: templates/catalog.php:41
 msgid "Dealer"
 msgstr "Détaillant"
 
-#: templates/catalog.php:43
+#: templates/catalog.php:41
 msgid "Retail"
 msgstr "Consommateur"
 
-#: templates/catalog.php:397
+#: templates/catalog.php:421
 msgid "Drag rows or pictures to reorder · hover a row: ◩ shows or hides its picture, × removes the product · hover a picture: × hides it, drag its corner to zoom (double-click resets) — changes save automatically."
 msgstr "Glissez les rangées ou les photos pour les réordonner · survolez une rangée : ◩ affiche ou masque sa photo, × retire le produit · survolez une photo : × la masque, glissez son coin pour zoomer (double-clic pour réinitialiser) — les modifications sont enregistrées automatiquement."
 
-#: templates/catalog.php:478
+#: templates/catalog.php:502
 msgid "Description"
 msgstr "Description"
 
-#: templates/catalog.php:514
+#: templates/catalog.php:538
 msgid "Show or hide this picture below the table"
 msgstr "Afficher ou masquer cette photo sous le tableau"
 
-#: templates/catalog.php:531
+#: templates/catalog.php:555
 msgid "Pictures:"
 msgstr "Photos :"
 
-#: templates/catalog.php:532
+#: templates/catalog.php:556
 msgid "Show all"
 msgstr "Tout afficher"
 
-#: templates/catalog.php:533
+#: templates/catalog.php:557
 msgid "Hide all"
 msgstr "Tout masquer"
 
-#: templates/catalog.php:539
+#: templates/catalog.php:563
 msgid "Hide this picture"
 msgstr "Masquer cette photo"
 
@@ -748,269 +748,337 @@ msgstr "Libellé imprimé pour « %s »"
 msgid "The box next to each price is the label printed in the catalogue (e.g. “Dealer”, “MSRP”, “Street”). Leave it empty to use the default shown in grey."
 msgstr "La case à côté de chaque prix est le libellé imprimé dans le catalogue (ex. « Détaillant », « PDSF », « Prix réduit »). Laissez-la vide pour utiliser le libellé par défaut affiché en gris."
 
-#: includes/class-olicg-admin.php:264
-msgid "Cover page"
-msgstr "Page couverture"
-
-#. translators: %s: link to the Cover page tab
-#: includes/class-olicg-admin.php:422
-msgid "Logo, cover texts, cover image and background: %s."
-msgstr "Logo, textes, image et arrière-plan de la couverture : %s."
-
-#: includes/class-olicg-admin.php:423
-msgid "Cover page tab"
-msgstr "onglet Page couverture"
-
-#: includes/class-olicg-cover.php:38
+#: includes/class-olicg-cover.php:52
 msgid "Designed cover — logo, title, information band (all editable below)"
 msgstr "Couverture conçue — logo, titre, bandeau d’information (tout est modifiable ci-dessous)"
 
-#: includes/class-olicg-cover.php:39
+#: includes/class-olicg-cover.php:53
 msgid "Full-page image — your own cover artwork replaces the whole cover"
 msgstr "Image pleine page — votre propre visuel remplace toute la couverture"
 
-#: includes/class-olicg-cover.php:40
+#: includes/class-olicg-cover.php:54
 msgid "No cover — the catalogue starts with the first category"
 msgstr "Sans couverture — le catalogue commence par la première catégorie"
 
-#: includes/class-olicg-cover.php:51
+#: includes/class-olicg-cover.php:65
 msgid "Company name (shown when there is no logo)"
 msgstr "Nom de l’entreprise (affiché s’il n’y a pas de logo)"
 
-#: includes/class-olicg-cover.php:52
+#: includes/class-olicg-cover.php:66
 msgid "Top right — line 1"
 msgstr "En haut à droite — ligne 1"
 
-#: includes/class-olicg-cover.php:53
+#: includes/class-olicg-cover.php:67
 msgid "Top right — line 2"
 msgstr "En haut à droite — ligne 2"
 
-#: includes/class-olicg-cover.php:54
-#: includes/class-olicg-cover.php:335
+#: includes/class-olicg-cover.php:68
+#: includes/class-olicg-cover.php:413
 msgid "Small line above the title"
 msgstr "Petite ligne au-dessus du titre"
 
-#: includes/class-olicg-cover.php:55
+#: includes/class-olicg-cover.php:69
 msgid "Title"
 msgstr "Titre"
 
-#: includes/class-olicg-cover.php:56
+#: includes/class-olicg-cover.php:70
 msgid "Second title line"
 msgstr "Deuxième ligne du titre"
 
-#: includes/class-olicg-cover.php:57
+#: includes/class-olicg-cover.php:71
 msgid "Band — box 1 label"
 msgstr "Bandeau — case 1, libellé"
 
-#: includes/class-olicg-cover.php:58
+#: includes/class-olicg-cover.php:72
 msgid "Band — box 1 value"
 msgstr "Bandeau — case 1, valeur"
 
-#: includes/class-olicg-cover.php:59
+#: includes/class-olicg-cover.php:73
 msgid "Band — box 2 label"
 msgstr "Bandeau — case 2, libellé"
 
-#: includes/class-olicg-cover.php:60
+#: includes/class-olicg-cover.php:74
 msgid "Band — box 2 value"
 msgstr "Bandeau — case 2, valeur"
 
-#: includes/class-olicg-cover.php:61
+#: includes/class-olicg-cover.php:75
 msgid "Band — box 3 label"
 msgstr "Bandeau — case 3, libellé"
 
-#: includes/class-olicg-cover.php:62
+#: includes/class-olicg-cover.php:76
 msgid "Band — box 3 value"
 msgstr "Bandeau — case 3, valeur"
 
-#: includes/class-olicg-cover.php:63
-#: includes/class-olicg-cover.php:337
+#: includes/class-olicg-cover.php:77
+#: includes/class-olicg-cover.php:415
 msgid "Note under the band"
 msgstr "Note sous le bandeau"
 
-#: includes/class-olicg-cover.php:90
+#: includes/class-olicg-cover.php:110
 msgid "catalogue title (Catalog tab)"
 msgstr "titre du catalogue (onglet Catalogue)"
 
-#: includes/class-olicg-cover.php:91
+#: includes/class-olicg-cover.php:111
 msgid "current year"
 msgstr "année en cours"
 
-#: includes/class-olicg-cover.php:92
+#: includes/class-olicg-cover.php:112
 msgid "today’s date"
 msgstr "date du jour"
 
-#: includes/class-olicg-cover.php:93
+#: includes/class-olicg-cover.php:113
 msgid "site name"
 msgstr "nom du site"
 
-#: includes/class-olicg-cover.php:94
+#: includes/class-olicg-cover.php:114
 msgid "site address"
 msgstr "adresse du site"
 
-#: includes/class-olicg-cover.php:95
+#: includes/class-olicg-cover.php:115
 msgid "Canada / United States"
 msgstr "Canada / États-Unis"
 
-#: includes/class-olicg-cover.php:96
+#: includes/class-olicg-cover.php:116
 msgid "CAD / USD"
 msgstr "CAD / USD"
 
-#: includes/class-olicg-cover.php:97
+#: includes/class-olicg-cover.php:117
 msgid "price labels shown, e.g. Cost · List · MAP"
 msgstr "libellés des prix affichés, ex. Coûtant · Liste · PAM"
 
-#: includes/class-olicg-cover.php:98
+#: includes/class-olicg-cover.php:118
 msgid "Dealer price list / Suggested retail prices / Product catalogue"
 msgstr "Liste de prix détaillant / Prix de détail suggérés / Catalogue de produits"
 
-#: includes/class-olicg-cover.php:99
+#: includes/class-olicg-cover.php:119
 msgid "number of products"
 msgstr "nombre de produits"
 
-#: includes/class-olicg-cover.php:100
+#: includes/class-olicg-cover.php:120
 msgid "automatic note (confidential dealer pricing…)"
 msgstr "note automatique (prix détaillant confidentiels…)"
 
-#: includes/class-olicg-cover.php:245
+#: includes/class-olicg-cover.php:304
 msgid "Choose image"
 msgstr "Choisir une image"
 
-#: includes/class-olicg-cover.php:246
+#: includes/class-olicg-cover.php:305
 msgid "Remove"
 msgstr "Retirer"
 
-#: includes/class-olicg-cover.php:262
+#: includes/class-olicg-cover.php:340
 msgid "Customise the first page of the catalogue: every text, the logo, fonts, colours and background — or replace the whole cover with your own image. Fonts and colours used inside the catalogue are in the Design tab."
 msgstr "Personnalisez la première page du catalogue : chaque texte, le logo, les polices, les couleurs et l’arrière-plan — ou remplacez toute la couverture par votre propre image. Les polices et couleurs de l’intérieur du catalogue sont dans l’onglet Apparence."
 
-#: includes/class-olicg-cover.php:270
+#: includes/class-olicg-cover.php:348
 msgid "Cover type"
 msgstr "Type de couverture"
 
-#: includes/class-olicg-cover.php:277
+#: includes/class-olicg-cover.php:355
 msgid "Full-page image"
 msgstr "Image pleine page"
 
-#: includes/class-olicg-cover.php:278
+#: includes/class-olicg-cover.php:356
 msgid "Cover image"
 msgstr "Image de couverture"
 
-#: includes/class-olicg-cover.php:278
+#: includes/class-olicg-cover.php:356
 msgid "Used with “Full-page image”. Best size: 2550 × 3300 px (Letter) or 2480 × 3508 px (A4), portrait. Printed edge to edge."
 msgstr "Utilisée avec « Image pleine page ». Taille idéale : 2550 × 3300 px (Lettre) ou 2480 × 3508 px (A4), portrait. Imprimée bord à bord."
 
-#: includes/class-olicg-cover.php:280
+#: includes/class-olicg-cover.php:358
 msgid "Fit"
 msgstr "Ajustement"
 
-#: includes/class-olicg-cover.php:282
+#: includes/class-olicg-cover.php:360
 msgid "Fill the page (crops edges if the proportions differ)"
 msgstr "Remplir la page (rogne les bords si les proportions diffèrent)"
 
-#: includes/class-olicg-cover.php:283
+#: includes/class-olicg-cover.php:361
 msgid "Show the whole image (background colour around it)"
 msgstr "Afficher l’image entière (couleur d’arrière-plan autour)"
 
-#: includes/class-olicg-cover.php:288
-#: includes/class-olicg-cover.php:290
+#: includes/class-olicg-cover.php:366
+#: includes/class-olicg-cover.php:368
 msgid "Logo"
 msgstr "Logo"
 
-#: includes/class-olicg-cover.php:289
+#: includes/class-olicg-cover.php:367
 msgid "Show the logo (or the company name when there is no logo)"
 msgstr "Afficher le logo (ou le nom de l’entreprise s’il n’y a pas de logo)"
 
 #. translators: %s: logo URL used when empty
-#: includes/class-olicg-cover.php:290
+#: includes/class-olicg-cover.php:368
 msgid "Leave empty to use the site logo (%s)."
 msgstr "Laissez vide pour utiliser le logo du site (%s)."
 
 #. translators: %s: logo URL used when empty
-#: includes/class-olicg-cover.php:290
+#: includes/class-olicg-cover.php:368
 msgid "none found"
 msgstr "aucun trouvé"
 
-#: includes/class-olicg-cover.php:292
+#: includes/class-olicg-cover.php:370
 msgid "Logo height (px)"
 msgstr "Hauteur du logo (px)"
 
-#: includes/class-olicg-cover.php:297
+#: includes/class-olicg-cover.php:375
 msgid "Background & colours"
 msgstr "Arrière-plan et couleurs"
 
-#: includes/class-olicg-cover.php:300
+#: includes/class-olicg-cover.php:378
 msgid "Background colour"
 msgstr "Couleur d’arrière-plan"
 
-#: includes/class-olicg-cover.php:304
+#: includes/class-olicg-cover.php:382
 msgid "Text colour"
 msgstr "Couleur du texte"
 
-#: includes/class-olicg-cover.php:308
+#: includes/class-olicg-cover.php:386
 msgid "Secondary text colour"
 msgstr "Couleur du texte secondaire"
 
-#: includes/class-olicg-cover.php:312
+#: includes/class-olicg-cover.php:390
 msgid "Empty colours follow the Design tab (white page, Text and Secondary text colours). A background colour or image prints edge to edge. The information band uses the Design tab’s “Cover band” colours."
 msgstr "Les couleurs vides suivent l’onglet Apparence (page blanche, couleurs Texte et Texte secondaire). Une couleur ou une image d’arrière-plan s’imprime bord à bord. Le bandeau d’information utilise les couleurs « Bandeau de couverture » de l’onglet Apparence."
 
-#: includes/class-olicg-cover.php:313
+#: includes/class-olicg-cover.php:391
 msgid "Background image (behind the texts)"
 msgstr "Image d’arrière-plan (derrière les textes)"
 
-#: includes/class-olicg-cover.php:315
+#: includes/class-olicg-cover.php:393
 msgid "Background colour over the image (%) — makes texts easier to read"
 msgstr "Couleur d’arrière-plan par-dessus l’image (%) — rend les textes plus lisibles"
 
-#: includes/class-olicg-cover.php:320
-#: includes/class-olicg-cover.php:322
+#: includes/class-olicg-cover.php:398
+#: includes/class-olicg-cover.php:400
 msgid "Title font"
 msgstr "Police du titre"
 
-#: includes/class-olicg-cover.php:323
+#: includes/class-olicg-cover.php:401
 msgid "Size (pt)"
 msgstr "Taille (pt)"
 
-#: includes/class-olicg-cover.php:327
+#: includes/class-olicg-cover.php:405
 msgid "Empty = the headings font from the Design tab. Loaded the same way as the other fonts (Design → Load fonts from)."
 msgstr "Vide = la police des titres de l’onglet Apparence. Chargée comme les autres polices (Apparence → Charger les polices depuis)."
 
-#: includes/class-olicg-cover.php:331
+#: includes/class-olicg-cover.php:409
 msgid "Cover texts"
 msgstr "Textes de la couverture"
 
-#: includes/class-olicg-cover.php:333
+#: includes/class-olicg-cover.php:411
 msgid "Show"
 msgstr "Afficher"
 
-#: includes/class-olicg-cover.php:334
+#: includes/class-olicg-cover.php:412
 msgid "Top right lines"
 msgstr "Lignes en haut à droite"
 
-#: includes/class-olicg-cover.php:336
+#: includes/class-olicg-cover.php:414
 msgid "Information band"
 msgstr "Bandeau d’information"
 
-#: includes/class-olicg-cover.php:351
+#: includes/class-olicg-cover.php:440
 msgid "Empty fields use the automatic text shown in grey; type a single dash (-) to print nothing. You can mix your own words with these placeholders:"
 msgstr "Les champs vides utilisent le texte automatique affiché en gris; tapez un seul tiret (-) pour ne rien imprimer. Vous pouvez combiner vos mots avec ces variables :"
 
-#: includes/class-olicg-cover.php:357
+#: includes/class-olicg-cover.php:446
 msgid "Custom texts can be translated with WPML String Translation / Polylang (names “Cover: …”) or TranslatePress."
 msgstr "Les textes personnalisés peuvent être traduits avec WPML String Translation / Polylang (noms « Cover: … ») ou TranslatePress."
 
-#: includes/class-olicg-cover.php:360
+#: includes/class-olicg-cover.php:449
 msgid "Save cover"
 msgstr "Enregistrer la couverture"
 
-#: includes/class-olicg-cover.php:361
+#: includes/class-olicg-cover.php:450
 msgid "Preview catalogue"
 msgstr "Aperçu du catalogue"
 
-#: includes/class-olicg-cover.php:362
+#: includes/class-olicg-cover.php:451
 msgid "Reset the cover to the defaults?"
 msgstr "Réinitialiser la couverture par défaut?"
 
 #: includes/class-olicg-design.php:70
 msgid "Catalogue page background"
 msgstr "Arrière-plan des pages du catalogue"
+
+#: includes/class-olicg-admin.php:264
+msgid "Cover & pages"
+msgstr "Couverture et pages"
+
+#. translators: %s: link to the Cover page tab
+#: includes/class-olicg-admin.php:422
+msgid "Logo, cover texts, cover image, background, footer and page numbers: %s."
+msgstr "Logo, textes, image et arrière-plan de la couverture, pied de page et numéros de page : %s."
+
+#: includes/class-olicg-admin.php:423
+msgid "Cover & pages tab"
+msgstr "onglet Couverture et pages"
+
+#: includes/class-olicg-cover.php:44
+msgid "Bottom right"
+msgstr "En bas à droite"
+
+#: includes/class-olicg-cover.php:45
+msgid "Bottom centre"
+msgstr "En bas au centre"
+
+#: includes/class-olicg-cover.php:46
+msgid "Bottom left"
+msgstr "En bas à gauche"
+
+#: includes/class-olicg-cover.php:78
+msgid "Footer text (bottom of every page)"
+msgstr "Texte du pied de page (bas de chaque page)"
+
+#: includes/class-olicg-cover.php:79
+msgid "Page number"
+msgstr "Numéro de page"
+
+#: includes/class-olicg-cover.php:80
+msgid "Closing text (end of the catalogue)"
+msgstr "Texte de fin (à la fin du catalogue)"
+
+#: includes/class-olicg-cover.php:121
+msgid "automatic closing text (© year, prices current as of…)"
+msgstr "texte de fin automatique (© année, prix en vigueur au…)"
+
+#: includes/class-olicg-cover.php:122
+msgid "page number (footer and page number only)"
+msgstr "numéro de page (pied de page et numéro de page seulement)"
+
+#: includes/class-olicg-cover.php:123
+msgid "total number of pages, cover included (footer and page number only)"
+msgstr "nombre total de pages, couverture incluse (pied de page et numéro de page seulement)"
+
+#: includes/class-olicg-cover.php:420
+msgid "Pages, footer & numbering"
+msgstr "Pages, pied de page et numérotation"
+
+#: includes/class-olicg-cover.php:422
+msgid "Footer text on every page"
+msgstr "Texte du pied de page sur chaque page"
+
+#: includes/class-olicg-cover.php:423
+msgid "Page numbers"
+msgstr "Numéros de page"
+
+#: includes/class-olicg-cover.php:424
+msgid "Page number position"
+msgstr "Position du numéro de page"
+
+#: includes/class-olicg-cover.php:431
+msgid "Count the cover as page 1 (untick to start at 1 on the first product page)"
+msgstr "Compter la couverture comme page 1 (décochez pour commencer à 1 sur la première page de produits)"
+
+#: includes/class-olicg-cover.php:432
+msgid "Footer size (pt)"
+msgstr "Taille du pied de page (pt)"
+
+#: includes/class-olicg-cover.php:435
+msgid "Closing text at the end of the catalogue"
+msgstr "Texte de fin à la fin du catalogue"
+
+#: includes/class-olicg-cover.php:438
+msgid "Examples for the page number: “Page {page}”, “{page} / {pages}”, “Page {page} of {pages}”. The footer sits on the opposite side of the page number (left when the number is centred). The cover never shows the footer. {pages} always counts the cover, so with “Count the cover” unticked prefer “Page {page}”."
+msgstr "Exemples pour le numéro de page : « Page {page} », « {page} / {pages} », « Page {page} de {pages} ». Le pied de page se place du côté opposé au numéro (à gauche si le numéro est centré). La couverture n’affiche jamais le pied de page. {pages} compte toujours la couverture : si « Compter la couverture » est décoché, préférez « Page {page} »."

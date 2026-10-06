@@ -34,8 +34,6 @@ if ( $olicg_is_dealer ) {
 	$olicg_price_lbl = __( 'Product catalogue', 'oli-catalog-generator' );
 }
 $olicg_edition   = $olicg_market . ( $olicg_components ? ' · ' . $olicg_prices_lbl : '' );
-$olicg_footer    = sprintf( '%s — %s %s · %s · %s', get_bloginfo( 'name' ), $settings['title'], $olicg_year, $olicg_market, $currency );
-$olicg_footer_css = str_replace( array( '\\', '"', '<', '>', "\n", "\r" ), array( '\\\\', '\\"', '', '', ' ', ' ' ), wp_strip_all_tags( html_entity_decode( $olicg_footer, ENT_QUOTES, 'UTF-8' ) ) );
 $olicg_layout    = isset( OLICG_Catalog::layouts()[ $settings['layout'] ] ) ? $settings['layout'] : 'compact';
 $olicg_columns   = 'list' === $olicg_layout ? 2 : max( 2, min( 'grid' === $olicg_layout ? 4 : 6, (int) $settings['columns'] ) );
 $olicg_paper     = 'a4' === $settings['paper'] ? 'a4' : 'letter';
@@ -68,6 +66,30 @@ $olicg_cover_values = array(
 	'{count}'         => $olicg_count,
 	'{note}'          => $olicg_note,
 );
+$olicg_closing = $olicg_components
+	? sprintf(
+		/* translators: 1: site name, 2: currency, 3: date, 4: site URL */
+		__( '© %1$s. All prices in %2$s, current as of %3$s. Specifications, prices and availability subject to change without notice. %4$s', 'oli-catalog-generator' ),
+		$olicg_year . ' ' . get_bloginfo( 'name' ),
+		$currency,
+		$olicg_date,
+		wp_parse_url( home_url(), PHP_URL_HOST )
+	)
+	: sprintf(
+		/* translators: 1: site name, 2: date, 3: site URL */
+		__( '© %1$s. Current as of %2$s. Specifications and availability subject to change without notice. %3$s', 'oli-catalog-generator' ),
+		$olicg_year . ' ' . get_bloginfo( 'name' ),
+		$olicg_date,
+		wp_parse_url( home_url(), PHP_URL_HOST )
+	);
+$olicg_cover_values['{closing}'] = $olicg_closing;
+
+$olicg_footer_css = $olicg_cover['footer_show'] ? OLICG_Cover::css_content( OLICG_Cover::fill_plain( $olicg_cover_texts['footer'], $olicg_cover_values ) ) : 'none';
+$olicg_page_css   = $olicg_cover['page_numbers'] ? OLICG_Cover::css_content( OLICG_Cover::fill_plain( $olicg_cover_texts['page'], $olicg_cover_values ) ) : 'none';
+$olicg_page_box   = $olicg_cover['page_position'];
+$olicg_footer_box = 'left' === $olicg_page_box ? 'right' : 'left';
+$olicg_footer_pt  = (float) $olicg_cover['footer_size'];
+
 $olicg_cover_text = static function ( $key ) use ( $olicg_cover_texts, $olicg_cover_values ) {
 	return OLICG_Cover::fill( $olicg_cover_texts[ $key ], $olicg_cover_values );
 };
@@ -117,13 +139,15 @@ $olicg_image_box = static function ( array $item ) use ( $settings, $olicg_layou
 @page {
 	size: <?php echo 'a4' === $olicg_paper ? 'A4' : 'letter'; ?> portrait;
 	margin: 0.5in 0.45in 0.6in;
-	@bottom-left { content: "<?php echo $olicg_footer_css; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped for a CSS string above. ?>"; font: 7pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_muted'] ); ?>; }
-	@bottom-right { content: counter(page); font: 700 8pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_text'] ); ?>; }
+	@bottom-<?php echo esc_html( $olicg_footer_box ); ?> { content: <?php echo $olicg_footer_css; // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::css_content() escapes. ?>; font: <?php echo esc_html( $olicg_footer_pt ); ?>pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_muted'] ); ?>; }
+	@bottom-<?php echo esc_html( $olicg_page_box ); ?> { content: <?php echo $olicg_page_css; // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::css_content() escapes. ?>; font: 700 <?php echo esc_html( $olicg_footer_pt + 1 ); ?>pt <?php echo $olicg_mono_css; // phpcs:ignore WordPress.Security.EscapeOutput ?>; color: <?php echo esc_html( $olicg_design['color_text'] ); ?>; }
 }
 <?php if ( $olicg_has_cover ) : ?>
 @page :first {
 	<?php echo $olicg_bleed ? 'margin: 0;' : ''; ?>
+	<?php echo $olicg_cover['count_cover'] ? '' : 'counter-increment: page 0;'; ?>
 	@bottom-left { content: none; }
+	@bottom-center { content: none; }
 	@bottom-right { content: none; }
 }
 <?php endif; ?>
@@ -602,29 +626,8 @@ body {
 		</section>
 	<?php endforeach; ?>
 
-	<?php if ( $sections ) : ?>
-		<div class="closing">
-			<?php
-			if ( $olicg_components ) {
-				echo esc_html( sprintf(
-					/* translators: 1: site name, 2: currency, 3: date, 4: site URL */
-					__( '© %1$s. All prices in %2$s, current as of %3$s. Specifications, prices and availability subject to change without notice. %4$s', 'oli-catalog-generator' ),
-					$olicg_year . ' ' . get_bloginfo( 'name' ),
-					$currency,
-					$olicg_date,
-					wp_parse_url( home_url(), PHP_URL_HOST )
-				) );
-			} else {
-				echo esc_html( sprintf(
-					/* translators: 1: site name, 2: date, 3: site URL */
-					__( '© %1$s. Current as of %2$s. Specifications and availability subject to change without notice. %3$s', 'oli-catalog-generator' ),
-					$olicg_year . ' ' . get_bloginfo( 'name' ),
-					$olicg_date,
-					wp_parse_url( home_url(), PHP_URL_HOST )
-				) );
-			}
-			?>
-		</div>
+	<?php if ( $sections && $olicg_cover['closing_show'] && '' !== $olicg_cover_text( 'closing' ) ) : ?>
+		<div class="closing"><?php echo $olicg_cover_text( 'closing' ); // phpcs:ignore WordPress.Security.EscapeOutput -- OLICG_Cover::fill() escapes. ?></div>
 	<?php endif; ?>
 </main>
 

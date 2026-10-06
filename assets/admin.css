@@ -20,6 +20,7 @@
 .olicg-tokens { margin: 4px 0 10px; columns: 2; font-size: 12px; }
 .olicg-tokens li { margin: 0 0 4px; break-inside: avoid; }
 .olicg-card h3 { margin: 22px 0 6px; font-size: 13px; }
+.olicg-card .olicg-subhead { margin-top: 32px; }
 .olicg-actions { display: flex; gap: 8px; margin-top: 18px; }
 .olicg-quick .button { margin: 6px 6px 0 0; }
 .olicg-quick-lang { display: inline-block; min-width: 72px; margin-top: 6px; font-weight: 600; }

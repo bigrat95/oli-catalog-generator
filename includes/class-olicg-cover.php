@@ -29,7 +29,21 @@ class OLICG_Cover {
 			'show_eyebrow' => 1,
 			'show_band'    => 1,
 			'show_note'    => 1,
+			'page_numbers' => 1,
+			'page_position' => 'right',
+			'count_cover'  => 1,
+			'footer_show'  => 1,
+			'footer_size'  => 7,
+			'closing_show' => 1,
 			'texts'        => array(),
+		);
+	}
+
+	public static function page_positions() {
+		return array(
+			'right'  => __( 'Bottom right', 'oli-catalog-generator' ),
+			'center' => __( 'Bottom centre', 'oli-catalog-generator' ),
+			'left'   => __( 'Bottom left', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -61,6 +75,9 @@ class OLICG_Cover {
 			'band3_label'  => array( 'label' => __( 'Band — box 3 label', 'oli-catalog-generator' ), 'multiline' => false ),
 			'band3_value'  => array( 'label' => __( 'Band — box 3 value', 'oli-catalog-generator' ), 'multiline' => false ),
 			'note'         => array( 'label' => __( 'Note under the band', 'oli-catalog-generator' ), 'multiline' => true ),
+			'footer'       => array( 'label' => __( 'Footer text (bottom of every page)', 'oli-catalog-generator' ), 'multiline' => false, 'group' => 'pages' ),
+			'page'         => array( 'label' => __( 'Page number', 'oli-catalog-generator' ), 'multiline' => false, 'group' => 'pages' ),
+			'closing'      => array( 'label' => __( 'Closing text (end of the catalogue)', 'oli-catalog-generator' ), 'multiline' => true, 'group' => 'pages' ),
 		);
 	}
 
@@ -82,6 +99,9 @@ class OLICG_Cover {
 			'band3_label' => __( 'Products', 'oli-catalog-generator' ),
 			'band3_value' => '{count}',
 			'note'        => '{note}',
+			'footer'      => '{site} — {title} {year} · {market} · {currency}',
+			'page'        => '{page}',
+			'closing'     => '{closing}',
 		);
 	}
 
@@ -98,6 +118,9 @@ class OLICG_Cover {
 			'{edition_label}' => __( 'Dealer price list / Suggested retail prices / Product catalogue', 'oli-catalog-generator' ),
 			'{count}'         => __( 'number of products', 'oli-catalog-generator' ),
 			'{note}'          => __( 'automatic note (confidential dealer pricing…)', 'oli-catalog-generator' ),
+			'{closing}'       => __( 'automatic closing text (© year, prices current as of…)', 'oli-catalog-generator' ),
+			'{page}'          => __( 'page number (footer and page number only)', 'oli-catalog-generator' ),
+			'{pages}'         => __( 'total number of pages, cover included (footer and page number only)', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -143,6 +166,35 @@ class OLICG_Cover {
 			$html = str_replace( esc_html( $token ), '{count}' === $token ? '<span class="js-total">' . esc_html( $value ) . '</span>' : esc_html( $value ), $html );
 		}
 		return $html;
+	}
+
+	/**
+	 * Plain text with {tokens} filled ({page} / {pages} are left for css_content()).
+	 */
+	public static function fill_plain( $text, array $values ) {
+		if ( '-' === trim( $text ) ) {
+			return '';
+		}
+		$text = strtr( $text, array_map( 'strval', $values ) );
+		return trim( preg_replace( '/\s+/', ' ', html_entity_decode( wp_strip_all_tags( $text ), ENT_QUOTES, 'UTF-8' ) ) );
+	}
+
+	/**
+	 * CSS `content` value for a page margin box: quoted text plus page counters.
+	 */
+	public static function css_content( $text ) {
+		$parts = preg_split( '/(\{pages?\})/', (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+		$out   = array();
+		foreach ( $parts as $part ) {
+			if ( '{page}' === $part ) {
+				$out[] = 'counter(page)';
+			} elseif ( '{pages}' === $part ) {
+				$out[] = 'counter(pages)';
+			} else {
+				$out[] = '"' . str_replace( array( '\\', '"', '<', '>' ), array( '\\\\', '\\"', '', '' ), $part ) . '"';
+			}
+		}
+		return $out ? implode( ' ', $out ) : 'none';
 	}
 
 	public static function register_strings() {
@@ -198,6 +250,7 @@ class OLICG_Cover {
 			};
 			$mode     = sanitize_key( $post( 'olicg_cover_mode' ) );
 			$fit      = sanitize_key( $post( 'olicg_cover_image_fit' ) );
+			$position = sanitize_key( $post( 'olicg_cover_page_position' ) );
 			$defaults = self::default_texts();
 			$texts    = array();
 			$posted   = isset( $_POST['olicg_cover_texts'] ) && is_array( $_POST['olicg_cover_texts'] ) ? wp_unslash( $_POST['olicg_cover_texts'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized below.
@@ -227,6 +280,12 @@ class OLICG_Cover {
 				'show_eyebrow' => '' === $post( 'olicg_cover_show_eyebrow' ) ? 0 : 1,
 				'show_band'    => '' === $post( 'olicg_cover_show_band' ) ? 0 : 1,
 				'show_note'    => '' === $post( 'olicg_cover_show_note' ) ? 0 : 1,
+				'page_numbers' => '' === $post( 'olicg_cover_page_numbers' ) ? 0 : 1,
+				'page_position' => isset( self::page_positions()[ $position ] ) ? $position : 'right',
+				'count_cover'  => '' === $post( 'olicg_cover_count_cover' ) ? 0 : 1,
+				'footer_show'  => '' === $post( 'olicg_cover_footer_show' ) ? 0 : 1,
+				'footer_size'  => max( 5, min( 14, round( (float) $post( 'olicg_cover_footer_size' ) * 2 ) / 2 ) ),
+				'closing_show' => '' === $post( 'olicg_cover_closing_show' ) ? 0 : 1,
 				'texts'        => $texts,
 			), false );
 			self::register_strings();
@@ -253,9 +312,28 @@ class OLICG_Cover {
 		<?php
 	}
 
+	private static function text_inputs( array $s, $group ) {
+		$defaults = self::default_texts();
+		foreach ( self::text_fields() as $key => $field ) {
+			if ( ( isset( $field['group'] ) ? $field['group'] : 'cover' ) !== $group ) {
+				continue;
+			}
+			$value = isset( $s['texts'][ $key ] ) ? $s['texts'][ $key ] : '';
+			?>
+			<p>
+				<label for="olicg_cover_text_<?php echo esc_attr( $key ); ?>"><strong><?php echo esc_html( $field['label'] ); ?></strong></label><br>
+				<?php if ( $field['multiline'] ) : ?>
+					<textarea id="olicg_cover_text_<?php echo esc_attr( $key ); ?>" name="olicg_cover_texts[<?php echo esc_attr( $key ); ?>]" class="large-text" rows="3" placeholder="<?php echo esc_attr( $defaults[ $key ] ); ?>"><?php echo esc_textarea( $value ); ?></textarea>
+				<?php else : ?>
+					<input type="text" id="olicg_cover_text_<?php echo esc_attr( $key ); ?>" name="olicg_cover_texts[<?php echo esc_attr( $key ); ?>]" class="large-text" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $defaults[ $key ] ); ?>">
+				<?php endif; ?>
+			</p>
+			<?php
+		}
+	}
+
 	public static function render_settings() {
 		$s        = self::get_settings();
-		$defaults = self::default_texts();
 		$design   = OLICG_Design::get_settings();
 		$catalog  = OLICG_Catalog::get_settings();
 		?>
@@ -337,16 +415,27 @@ class OLICG_Cover {
 						<label><input type="checkbox" name="olicg_cover_show_note" value="1" <?php checked( $s['show_note'] ); ?>> <?php esc_html_e( 'Note under the band', 'oli-catalog-generator' ); ?></label>
 					</fieldset>
 
-					<?php foreach ( self::text_fields() as $key => $field ) : ?>
-						<p>
-							<label for="olicg_cover_text_<?php echo esc_attr( $key ); ?>"><strong><?php echo esc_html( $field['label'] ); ?></strong></label><br>
-							<?php if ( $field['multiline'] ) : ?>
-								<textarea id="olicg_cover_text_<?php echo esc_attr( $key ); ?>" name="olicg_cover_texts[<?php echo esc_attr( $key ); ?>]" class="large-text" rows="3" placeholder="<?php echo esc_attr( $defaults[ $key ] ); ?>"><?php echo esc_textarea( isset( $s['texts'][ $key ] ) ? $s['texts'][ $key ] : '' ); ?></textarea>
-							<?php else : ?>
-								<input type="text" id="olicg_cover_text_<?php echo esc_attr( $key ); ?>" name="olicg_cover_texts[<?php echo esc_attr( $key ); ?>]" class="large-text" value="<?php echo esc_attr( isset( $s['texts'][ $key ] ) ? $s['texts'][ $key ] : '' ); ?>" placeholder="<?php echo esc_attr( $defaults[ $key ] ); ?>">
-							<?php endif; ?>
-						</p>
-					<?php endforeach; ?>
+					<?php self::text_inputs( $s, 'cover' ); ?>
+
+					<h2 class="olicg-subhead"><?php esc_html_e( 'Pages, footer & numbering', 'oli-catalog-generator' ); ?></h2>
+					<fieldset class="olicg-choice">
+						<label><input type="checkbox" name="olicg_cover_footer_show" value="1" <?php checked( $s['footer_show'] ); ?>> <?php esc_html_e( 'Footer text on every page', 'oli-catalog-generator' ); ?></label>
+						<label><input type="checkbox" name="olicg_cover_page_numbers" value="1" <?php checked( $s['page_numbers'] ); ?>> <?php esc_html_e( 'Page numbers', 'oli-catalog-generator' ); ?></label>
+						<label><?php esc_html_e( 'Page number position', 'oli-catalog-generator' ); ?>
+							<select name="olicg_cover_page_position">
+								<?php foreach ( self::page_positions() as $key => $label ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['page_position'], $key ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</label>
+						<label><input type="checkbox" name="olicg_cover_count_cover" value="1" <?php checked( $s['count_cover'] ); ?>> <?php esc_html_e( 'Count the cover as page 1 (untick to start at 1 on the first product page)', 'oli-catalog-generator' ); ?></label>
+						<label><?php esc_html_e( 'Footer size (pt)', 'oli-catalog-generator' ); ?>
+							<input type="number" name="olicg_cover_footer_size" min="5" max="14" step="0.5" class="small-text" value="<?php echo esc_attr( $s['footer_size'] ); ?>">
+						</label>
+						<label><input type="checkbox" name="olicg_cover_closing_show" value="1" <?php checked( $s['closing_show'] ); ?>> <?php esc_html_e( 'Closing text at the end of the catalogue', 'oli-catalog-generator' ); ?></label>
+					</fieldset>
+					<?php self::text_inputs( $s, 'pages' ); ?>
+					<p class="description"><?php esc_html_e( 'Examples for the page number: “Page {page}”, “{page} / {pages}”, “Page {page} of {pages}”. The footer sits on the opposite side of the page number (left when the number is centred). The cover never shows the footer. {pages} always counts the cover, so with “Count the cover” unticked prefer “Page {page}”.', 'oli-catalog-generator' ); ?></p>
 
 					<p class="description"><?php esc_html_e( 'Empty fields use the automatic text shown in grey; type a single dash (-) to print nothing. You can mix your own words with these placeholders:', 'oli-catalog-generator' ); ?></p>
 					<ul class="olicg-tokens">
