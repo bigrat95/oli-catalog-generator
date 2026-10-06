@@ -1,6 +1,8 @@
 <?php
 /**
  * Shared look for the catalogue and the product PDF sheet: fonts, colours, custom CSS.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -11,7 +13,7 @@ class OLICG_Design {
 
 	public static function defaults() {
 		return array(
-			'font_source'      => 'google',
+			'font_source'      => 'system',
 			'font_css_url'     => '',
 			'font_heading'     => 'Playfair Display',
 			'font_body'        => 'Poppins',
@@ -36,9 +38,9 @@ class OLICG_Design {
 
 	public static function font_sources() {
 		return array(
-			'google' => __( 'Google Fonts — loaded automatically from the font names', 'oli-catalog-generator' ),
-			'url'    => __( 'Stylesheet URL — Adobe Fonts kit, self-hosted @font-face CSS, your theme’s font file…', 'oli-catalog-generator' ),
 			'system' => __( 'Installed / system fonts only (nothing is loaded)', 'oli-catalog-generator' ),
+			'url'    => __( 'Stylesheet URL — Adobe Fonts kit, self-hosted @font-face CSS, your theme’s font file…', 'oli-catalog-generator' ),
+			'google' => __( 'Google Fonts — loaded automatically from the font names', 'oli-catalog-generator' ),
 		);
 	}
 
@@ -177,14 +179,14 @@ class OLICG_Design {
 
 		$defaults = self::defaults();
 
-		if ( isset( $_POST['olicg_design_reset'] ) ) {
+		if ( isset( $_POST['olicg_design_reset'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() above.
 			delete_option( self::OPTION );
 			wp_safe_redirect( add_query_arg( array( 'page' => OLICG_Admin::SLUG, 'tab' => 'design', 'saved' => 1 ), admin_url( 'admin.php' ) ) );
 			exit;
 		}
 
 		$post   = static function ( $key ) {
-			return isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized per field below.
+			return isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- sanitized per field below; nonce checked above.
 		};
 		$source = sanitize_key( $post( 'olicg_font_source' ) );
 		$weight = absint( $post( 'olicg_heading_weight' ) );
@@ -192,7 +194,7 @@ class OLICG_Design {
 		$shadow = sanitize_key( $post( 'olicg_image_shadow' ) );
 
 		$design = array(
-			'font_source'      => isset( self::font_sources()[ $source ] ) ? $source : 'google',
+			'font_source'      => isset( self::font_sources()[ $source ] ) ? $source : 'system',
 			'font_css_url'     => esc_url_raw( $post( 'olicg_font_css_url' ) ),
 			'heading_italic'   => '' === $post( 'olicg_heading_italic' ) ? 0 : 1,
 			'heading_weight'   => in_array( $weight, array( 300, 400, 500, 600, 700, 800 ), true ) ? $weight : 400,
@@ -250,7 +252,8 @@ class OLICG_Design {
 						<?php foreach ( self::font_sources() as $key => $label ) : ?>
 							<label><input type="radio" name="olicg_font_source" value="<?php echo esc_attr( $key ); ?>" <?php checked( $d['font_source'], $key ); ?>> <?php echo esc_html( $label ); ?></label>
 						<?php endforeach; ?>
-						<input type="url" name="olicg_font_css_url" class="large-text" value="<?php echo esc_attr( $d['font_css_url'] ); ?>" placeholder="https://use.typekit.net/xxxxxxx.css">
+						<input type="url" name="olicg_font_css_url" class="large-text" value="<?php echo esc_attr( $d['font_css_url'] ); ?>" placeholder="https://use.typekit.net/xxxxxxx.css" aria-label="<?php esc_attr_e( 'Stylesheet URL', 'oli-catalog-generator' ); ?>">
+						<p class="description"><?php esc_html_e( 'Privacy: with Google Fonts or an external stylesheet, the browser of whoever opens the catalogue or the product PDF sheet connects to that font service. Self-hosted fonts (your theme’s font file) avoid this.', 'oli-catalog-generator' ); ?></p>
 					</fieldset>
 
 					<fieldset class="olicg-choice">
@@ -301,7 +304,7 @@ class OLICG_Design {
 
 					<div class="olicg-actions">
 						<button type="submit" class="button button-primary"><?php esc_html_e( 'Save design', 'oli-catalog-generator' ); ?></button>
-						<button type="submit" class="button" name="olicg_design_reset" value="1" onclick="return confirm('<?php echo esc_js( __( 'Reset fonts and colours to the defaults?', 'oli-catalog-generator' ) ); ?>');"><?php esc_html_e( 'Reset to defaults', 'oli-catalog-generator' ); ?></button>
+						<button type="submit" class="button" name="olicg_design_reset" value="1" data-olicg-confirm="<?php esc_attr_e( 'Reset fonts and colours to the defaults?', 'oli-catalog-generator' ); ?>"><?php esc_html_e( 'Reset to defaults', 'oli-catalog-generator' ); ?></button>
 					</div>
 				</div>
 			</div>

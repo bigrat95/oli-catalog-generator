@@ -4,6 +4,8 @@
  *
  * Renders a hidden A4 product sheet (logo, title, SKU, description, image,
  * specs, footer bar) and a button that opens it in a print window.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -99,7 +101,6 @@ class OLICG_Product_PDF {
 		}
 
 		add_shortcode( 'oli_product_pdf', array( __CLASS__, 'shortcode' ) );
-		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_filter( 'rocket_delay_js_exclusions', array( __CLASS__, 'rocket_exclusions' ) );
 		add_filter( 'rocket_exclude_js', array( __CLASS__, 'rocket_exclusions' ) );
 
@@ -110,9 +111,12 @@ class OLICG_Product_PDF {
 		}
 	}
 
+	/**
+	 * Registered only when a button is rendered: nothing loads on other pages.
+	 */
 	public static function register_assets() {
-		wp_register_style( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/product-pdf.css', array(), OLICG_VERSION );
-		wp_register_script( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/product-pdf.js', array(), OLICG_VERSION, true );
+		wp_register_style( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/css/product-pdf.css', array(), OLICG_VERSION );
+		wp_register_script( 'olicg-product-pdf', OLICG_PLUGIN_URL . 'assets/js/product-pdf.js', array(), OLICG_VERSION, true );
 		$design = OLICG_Design::get_settings();
 		wp_localize_script( 'olicg-product-pdf', 'olicgProductPdf', array(
 			'sheetLabel'   => __( 'Product Sheet', 'oli-catalog-generator' ),
@@ -207,7 +211,7 @@ class OLICG_Product_PDF {
 		if ( ! empty( $settings['logo_url'] ) ) {
 			return $settings['logo_url'];
 		}
-		return OLICG_Catalog::logo_url( OLICG_Catalog::get_settings() );
+		return OLICG_Catalog::logo_url();
 	}
 
 	public static function handle_save() {
@@ -217,10 +221,10 @@ class OLICG_Product_PDF {
 		check_admin_referer( 'olicg_save_pdf' );
 
 		$text = static function ( $key ) {
-			return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '';
+			return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() above.
 		};
 		$url = static function ( $key ) {
-			return isset( $_POST[ $key ] ) ? esc_url_raw( wp_unslash( $_POST[ $key ] ) ) : '';
+			return isset( $_POST[ $key ] ) ? esc_url_raw( wp_unslash( $_POST[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() above.
 		};
 
 		$placement = sanitize_key( $text( 'olicg_pdf_placement' ) );
@@ -293,7 +297,7 @@ class OLICG_Product_PDF {
 
 					<p>
 						<label for="olicg_pdf_logo_url"><strong><?php esc_html_e( 'Logo URL', 'oli-catalog-generator' ); ?></strong></label><br>
-						<input type="url" id="olicg_pdf_logo_url" name="olicg_pdf_logo_url" class="large-text" value="<?php echo esc_attr( $s['logo_url'] ); ?>" placeholder="<?php echo esc_attr( OLICG_Catalog::logo_url( OLICG_Catalog::get_settings() ) ); ?>">
+						<input type="url" id="olicg_pdf_logo_url" name="olicg_pdf_logo_url" class="large-text" value="<?php echo esc_attr( $s['logo_url'] ); ?>" placeholder="<?php echo esc_attr( OLICG_Catalog::logo_url() ); ?>">
 						<span class="description"><?php esc_html_e( 'Leave empty to use the catalogue / site logo.', 'oli-catalog-generator' ); ?></span>
 					</p>
 					<p><label><input type="checkbox" name="olicg_pdf_brand_logos" value="1" <?php checked( $s['brand_logos'] ); ?>> <?php esc_html_e( 'Use the product’s brand image (Products → Brands) when it has one', 'oli-catalog-generator' ); ?></label></p>

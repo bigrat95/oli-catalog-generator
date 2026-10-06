@@ -79,6 +79,12 @@
 			frame.open();
 		} );
 
+		$( document ).on( 'click', '[data-olicg-confirm]', function ( event ) {
+			if ( ! window.confirm( $( this ).data( 'olicg-confirm' ) ) ) {
+				event.preventDefault();
+			}
+		} );
+
 		$( document ).on( 'click', '.olicg-media-clear', function () {
 			$( this ).closest( '.olicg-media' ).find( '.olicg-media-url' ).val( '' ).trigger( 'change' );
 		} );

@@ -1,6 +1,12 @@
 <?php
+/**
+ * Removes every option the plugin created.
+ *
+ * @package OliCatalogGenerator
+ */
+
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
-delete_option( 'olicg_settings' );
-delete_option( 'olicg_pdf_settings' );
-delete_option( 'olicg_design' );
+foreach ( array( 'olicg_settings', 'olicg_pdf_settings', 'olicg_design', 'olicg_cover', 'olicg_version' ) as $olicg_option ) {
+	delete_option( $olicg_option );
+}

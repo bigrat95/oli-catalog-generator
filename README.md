@@ -11,8 +11,9 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - Prices: tick any combination of **Cost** (dealer cost), **List** (regular price), **MAP** (sale price) and **End-user** (lowest of list and MAP). Each ticked price gets its own line, or untick all for a catalogue without prices.
 - Price labels: type your own label next to each price (e.g. "Dealer", "MSRP", "Street"); empty uses the default. Custom labels are printed on cards, table headers and the cover, and can be translated in WPML String Translation / Polylang (names "Price label: cost", …) or TranslatePress.
 - Product details: tick **Image**, **Brand**, **SKU** and **UPC** independently.
-  - The brand comes from Products → Brands, Perfect Brands, or a `brand` attribute.
-  - The UPC comes from WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to the `quivers_upc` meta.
+  - The brand comes from the field chosen in **Data sources**, else Products → Brands, Perfect Brands, or a `brand` attribute.
+  - The UPC comes from the field chosen in **Data sources**, else WooCommerce's GTIN / UPC / EAN / ISBN field, falling back to common barcode meta (`quivers_upc`, `_upc`, `_gtin`…).
+- **Data sources (ACF / custom fields)**: choose the ACF field or meta key holding the dealer cost (CAD), dealer cost (USD), UPC and brand. Your ACF product fields are suggested as you type (fields inside ACF groups too).
 - Four layouts: **Compact grid** (small images, up to 6 per row, about 30–36 products per page — default), **List** (thumbnails in two columns, about 34 per page), **Large cards** (9 per page) and **Price list**.
 - **Price list** layout: one table per category (black category band with the edition, e.g. "CDN DEALER", then SKU / UPC / Brand / Description and one column per chosen price), with product pictures below each table. You choose which pictures show: hover a row and click ◩, hover a picture and click ×, or use "Show all / Hide all" per category. Drag rows or pictures to reorder (both stay in sync); picture zoom works like the cards. "Products per row" sets how many pictures per row.
 - Letter or A4, optional new page per category, page numbers and running footer.
@@ -23,7 +24,7 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 
 **WooCommerce → Catalog & Product PDF → Design** controls the look of both the catalogue and the product PDF sheet:
 
-- Fonts for headings, body, labels & prices, and the product PDF sheet, loaded from Google Fonts by name, from a stylesheet URL (Adobe Fonts kit, self-hosted `@font-face` CSS…), or from installed/system fonts.
+- Fonts for headings, body, labels & prices, and the product PDF sheet: installed/system fonts (default — nothing is loaded), a stylesheet URL (Adobe Fonts kit, self-hosted `@font-face` CSS…), or Google Fonts by name (opt-in; the reader's browser then connects to Google).
 - Italic headings on/off, heading weight, uppercase labels on/off.
 - Colours: text, secondary text, borders, image background, prices, cover band / PDF footer bar and its text, catalogue page background.
 - Product images: **Blend** (the photo melts into the image background colour — best for photos on white), **Solid colour** behind the image (best for transparent PNGs) or **No background**, plus an optional soft or strong drop shadow.
@@ -36,7 +37,7 @@ Build print-ready WooCommerce product catalogues (e.g. an accessories catalogue)
 - **Designed cover**, **Full-page image** (your own artwork printed edge to edge, fill or fit) or **No cover**.
 - Every cover text is editable: company name, the two top-right lines, the small line above the title, title, second title line, the three information-band boxes (label + value) and the note. Empty = automatic text; a single dash (`-`) prints nothing. Placeholders: `{title}`, `{year}`, `{date}`, `{site}`, `{domain}`, `{market}`, `{currency}`, `{prices}`, `{edition_label}`, `{count}`, `{note}`.
 - Show / hide the logo, top-right lines, line above the title, information band and note.
-- Logo (media library picker, height in px) — also used by the product PDF sheet when it has no logo of its own.
+- Logo (media library picker, height in px) — also used by the product PDF sheet when it has no logo of its own. Left empty: the **Site logo from ACF** field (any image / URL field of an ACF options page; image array, ID or URL), then the theme's custom logo.
 - Background colour and/or background image (with an adjustable colour overlay for legibility), cover text and secondary text colours — a coloured or image background prints edge to edge.
 - Title font and size (empty = the Design tab headings font).
 - Footer & page numbers: footer text on every page (editable, same placeholders), page number text (`{page}`, `{pages}` — e.g. "Page {page} of {pages}"), position (bottom right / centre / left), footer size, each on/off. Untick "Count the cover as page 1" to start numbering on the first product page (`{pages}` still counts the cover).
@@ -52,6 +53,13 @@ Off by default. Enable it in **WooCommerce → Catalog & Product PDF → Product
 - Logo per brand: uses the product's brand image (Products → Brands) when set, otherwise the logo you choose, otherwise the site logo.
 - Footer bar: optional icon and three lines (e.g. "MADE IN" / "CANADA" / "Since 1972"), site address and a disclaimer.
 - Button style: dark, light, or your theme's button style.
+
+## Advanced Custom Fields (ACF)
+
+ACF is optional; everything also works with plain options and custom fields.
+
+- **Logo**: Cover & pages → *Site logo from ACF* lists the image / URL / file fields of your ACF options pages. Image arrays, attachment IDs and URLs are all supported. Without ACF active, the stored option (`options_{field}`) is still read.
+- **Product data**: Catalog → *Data sources* — dealer costs (CAD / USD), UPC and brand can come from any ACF field on products or variations (or any meta key). Relationship, post object, taxonomy and choice fields are converted to their titles / labels; numeric codes keep their leading zeros.
 
 ## Multilingual
 
@@ -84,20 +92,21 @@ Works with **WPML**, **Polylang**, **TranslatePress** and **qTranslate-XT**, and
 2. WordPress → **Plugins → Add New → Upload Plugin**, then activate.
 3. Go to **WooCommerce → Catalog & Product PDF**.
 
-Requires WooCommerce. US pricing uses [Price Based on Country for WooCommerce](https://wordpress.org/plugins/woocommerce-product-price-based-on-countries/) when installed.
+Requires WordPress 6.5+, PHP 7.4+ and WooCommerce (HPOS compatible). US pricing uses [Price Based on Country for WooCommerce](https://wordpress.org/plugins/woocommerce-product-price-based-on-countries/) when installed.
 
 ## Price rules
 
 | Edition | End-user price | Dealer price |
 | --- | --- | --- |
-| Canada | Lowest of regular / sale price | `_dealer_cost_cad` meta |
-| United States | Lowest of the USD zone regular / sale price | `_dealer_cost_usd` meta |
+| Canada | Lowest of regular / sale price | Data sources field (default `_dealer_cost_cad`) |
+| United States | Lowest of the USD zone regular / sale price | Data sources field (default `_dealer_cost_usd`) |
 
 Regular price = list price, sale price = MAP. When only one exists, that one is shown. With several prices ticked, each product shows one labelled line per price ("—" when missing). Variable products show "From $X" when variation prices differ.
 
 ## Filters
 
-- `olicg_dealer_meta_keys` — change the dealer cost meta keys: `array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' )`.
+- `olicg_dealer_meta_keys` — override the dealer cost fields chosen in Data sources: `array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' )`.
+- `olicg_logo_url` — the site logo URL used by the cover and the product PDF sheet.
 - `olicg_us_zone_id` — Price Based on Country zone ID for USD prices (default `usa`, falls back to the first USD zone).
 - `olicg_upc_meta_keys` / `olicg_product_upc` — where the UPC is read from, when WooCommerce's GTIN field is empty.
 - `olicg_capability` — capability required to build and view catalogues (default `manage_woocommerce`).
@@ -106,3 +115,7 @@ Regular price = list price, sale price = MAP. When only one exists, that one is 
 ## Printing tips
 
 In the print dialog: **Margins: Default**, **Headers and footers: off**, **Background graphics: on**.
+
+## Author
+
+[Olivier Bigras](https://olivierbigras.com) (bigrat95). Licensed under the GPLv2 or later. See `readme.txt` for the WordPress.org description and changelog.

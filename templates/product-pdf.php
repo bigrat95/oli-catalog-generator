@@ -3,6 +3,8 @@
  * Hidden A4 product sheet, copied into a print window by assets/product-pdf.js.
  *
  * Available: $product (WC_Product), $settings (product PDF settings).
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;

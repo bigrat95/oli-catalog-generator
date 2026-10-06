@@ -1,6 +1,8 @@
 <?php
 /**
  * Catalogue selection (saved settings) and product collection.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -33,10 +35,58 @@ class OLICG_Catalog {
 			'show_brand'        => 1,
 			'section_new_page'  => 0,
 			'logo_url'          => '',
+			'fields'            => self::default_fields(),
 		);
 	}
 
 	const DEFAULT_TITLE = 'Accessories Catalogue';
+
+	/**
+	 * Product data read from ACF fields or custom fields (meta keys). Empty = automatic.
+	 *
+	 * @return string[] source => field name
+	 */
+	public static function default_fields() {
+		return array(
+			'cost_ca' => '_dealer_cost_cad',
+			'cost_us' => '_dealer_cost_usd',
+			'upc'     => '',
+			'brand'   => '',
+		);
+	}
+
+	/**
+	 * @return string[] source => admin label
+	 */
+	public static function field_labels() {
+		return array(
+			'cost_ca' => __( 'Dealer cost (CAD)', 'oli-catalog-generator' ),
+			'cost_us' => __( 'Dealer cost (USD)', 'oli-catalog-generator' ),
+			'upc'     => __( 'UPC / GTIN', 'oli-catalog-generator' ),
+			'brand'   => __( 'Brand', 'oli-catalog-generator' ),
+		);
+	}
+
+	public static function sanitize_fields( $fields ) {
+		$fields = is_array( $fields ) ? $fields : array();
+		$clean  = array();
+		foreach ( self::default_fields() as $key => $default ) {
+			$clean[ $key ] = isset( $fields[ $key ] ) ? OLICG_Acf::sanitize_name( $fields[ $key ] ) : $default;
+		}
+		return $clean;
+	}
+
+	/**
+	 * Field name for one data source (cached: read for every product and variation).
+	 */
+	public static function field( $source ) {
+		static $fields = null;
+		if ( null === $fields ) {
+			$saved  = get_option( self::OPTION, array() );
+			$fields = self::sanitize_fields( is_array( $saved ) && isset( $saved['fields'] ) ? $saved['fields'] : self::default_fields() );
+		}
+		return isset( $fields[ $source ] ) ? $fields[ $source ] : '';
+	}
 
 	/**
 	 * Catalogue title in the language being rendered ('' = current language).
@@ -73,6 +123,7 @@ class OLICG_Catalog {
 		$settings           = wp_parse_args( $saved, self::defaults() );
 		$settings['prices'] = OLICG_Pricing::sanitize_components( $settings['prices'] );
 		$settings['price_labels'] = self::sanitize_price_labels( $settings['price_labels'] );
+		$settings['fields']       = self::sanitize_fields( $settings['fields'] );
 		return $settings;
 	}
 
@@ -135,13 +186,14 @@ class OLICG_Catalog {
 			return array();
 		}
 
-		$query = new WP_Query( OLICG_I18n::query_args() + array(
+		return array_map( 'intval', OLICG_I18n::query_all_languages( array(
 			'post_type'              => 'product',
 			'post_status'            => 'publish',
 			'posts_per_page'         => -1,
 			'fields'                 => 'ids',
 			'no_found_rows'          => true,
 			'update_post_term_cache' => false,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- category selection, admin only.
 			'tax_query'              => array(
 				array(
 					'taxonomy'         => 'product_cat',
@@ -150,9 +202,7 @@ class OLICG_Catalog {
 					'include_children' => true,
 				),
 			),
-		) );
-
-		return array_map( 'intval', $query->posts );
+		) ) );
 	}
 
 	/**
@@ -439,6 +489,12 @@ class OLICG_Catalog {
 	 */
 	public static function brand_name( WC_Product $product ) {
 		$product_id = $product->is_type( 'variation' ) ? $product->get_parent_id() : $product->get_id();
+		if ( '' !== self::field( 'brand' ) ) {
+			$brand = OLICG_Acf::product_text( $product_id, self::field( 'brand' ) );
+			if ( '' !== $brand ) {
+				return html_entity_decode( $brand, ENT_QUOTES, 'UTF-8' );
+			}
+		}
 		foreach ( array( 'product_brand', 'pwb-brand', 'pa_brand' ) as $taxonomy ) {
 			if ( ! taxonomy_exists( $taxonomy ) ) {
 				continue;
@@ -453,10 +509,13 @@ class OLICG_Catalog {
 	}
 
 	/**
-	 * UPC / GTIN: WooCommerce's GTIN field, then common barcode meta keys.
+	 * UPC / GTIN: the chosen field, WooCommerce's GTIN field, then common barcode meta keys.
 	 */
 	public static function upc( WC_Product $product ) {
-		$upc = method_exists( $product, 'get_global_unique_id' ) ? (string) $product->get_global_unique_id() : '';
+		$upc = '' !== self::field( 'upc' ) ? OLICG_Acf::product_text( $product->get_id(), self::field( 'upc' ) ) : '';
+		if ( '' === $upc && method_exists( $product, 'get_global_unique_id' ) ) {
+			$upc = (string) $product->get_global_unique_id();
+		}
 		if ( '' === $upc ) {
 			foreach ( (array) apply_filters( 'olicg_upc_meta_keys', array( 'quivers_upc', '_quivers_upc', '_upc', 'upc', '_gtin', 'gtin', '_ean' ) ) as $key ) {
 				$value = get_post_meta( $product->get_id(), $key, true );
@@ -475,24 +534,19 @@ class OLICG_Catalog {
 	}
 
 	/**
+	 * Logo chosen in the Cover tab → ACF options logo field → the theme's custom logo.
+	 *
 	 * @param bool $custom False = the site logo only (ignores the logo chosen in the Cover tab).
 	 */
-	public static function logo_url( array $settings, $custom = true ) {
-		if ( $custom ) {
-			$cover = OLICG_Cover::get_settings();
-			if ( '' !== $cover['logo_url'] ) {
-				return $cover['logo_url'];
-			}
+	public static function logo_url( $custom = true ) {
+		$cover = OLICG_Cover::get_settings();
+		if ( $custom && '' !== $cover['logo_url'] ) {
+			return $cover['logo_url'];
 		}
-		if ( function_exists( 'get_field' ) ) {
-			$logo = get_field( 'site_logo', 'option' );
-			if ( is_array( $logo ) && ! empty( $logo['url'] ) ) {
-				return $logo['url'];
-			}
-			if ( is_string( $logo ) && '' !== $logo ) {
-				return $logo;
-			}
+		$logo = OLICG_Acf::option_image_url( $cover['logo_acf'] );
+		if ( '' === $logo && get_theme_mod( 'custom_logo' ) ) {
+			$logo = (string) wp_get_attachment_image_url( (int) get_theme_mod( 'custom_logo' ), 'full' );
 		}
-		return '';
+		return (string) apply_filters( 'olicg_logo_url', $logo, $custom );
 	}
 }

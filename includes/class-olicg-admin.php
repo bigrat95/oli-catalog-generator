@@ -1,6 +1,8 @@
 <?php
 /**
  * WooCommerce → Catalog Generator screen, save handler and printable output.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -102,8 +104,8 @@ class OLICG_Admin {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_media();
 		wp_enqueue_script( 'wc-enhanced-select' );
-		wp_enqueue_style( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.css', array(), OLICG_VERSION );
-		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
+		wp_enqueue_style( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/css/admin.css', array(), OLICG_VERSION );
+		wp_enqueue_script( 'olicg-admin', OLICG_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery', 'jquery-ui-sortable', 'wc-enhanced-select', 'wp-color-picker' ), OLICG_VERSION, true );
 	}
 
 	/**
@@ -146,7 +148,7 @@ class OLICG_Admin {
 		$old      = OLICG_Catalog::get_settings();
 		$regions  = OLICG_Pricing::regions();
 		$ids      = static function ( $key ) {
-			return isset( $_POST[ $key ] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) wp_unslash( $_POST[ $key ] ) ) ) ) ) : array();
+			return isset( $_POST[ $key ] ) ? array_values( array_unique( array_filter( array_map( 'absint', (array) wp_unslash( $_POST[ $key ] ) ) ) ) ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() above.
 		};
 
 		// Only rows shown in the product table can be removed/restored; categories
@@ -185,6 +187,7 @@ class OLICG_Admin {
 			'show_brand'        => empty( $_POST['olicg_show_brand'] ) ? 0 : 1,
 			'section_new_page'  => empty( $_POST['olicg_section_new_page'] ) ? 0 : 1,
 			'logo_url'          => $old['logo_url'],
+			'fields'            => OLICG_Catalog::sanitize_fields( isset( $_POST['olicg_fields'] ) ? wp_unslash( $_POST['olicg_fields'] ) : array() ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitize_fields().
 		);
 		if ( '' === $settings['title'] ) {
 			$settings['title'] = OLICG_Catalog::DEFAULT_TITLE;
@@ -231,10 +234,10 @@ class OLICG_Admin {
 
 		$sections = OLICG_Catalog::get_sections( $settings, $region, $prices, $lang );
 		$currency = $regions[ $region ]['currency'];
-		$logo_url = OLICG_Catalog::logo_url( $settings );
+		$logo_url = OLICG_Catalog::logo_url();
 
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
-			define( 'DONOTCACHEPAGE', true );
+			define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- standard page cache constant.
 		}
 		nocache_headers();
 		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private' );
@@ -252,7 +255,7 @@ class OLICG_Admin {
 			return;
 		}
 
-		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'catalog';
+		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'catalog'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tab navigation, read only.
 		$tab  = in_array( $tab, array( 'catalog', 'cover', 'pdf', 'design' ), true ) ? $tab : 'catalog';
 		$base = admin_url( 'admin.php?page=' . self::SLUG );
 		self::register_strings();
@@ -266,7 +269,7 @@ class OLICG_Admin {
 				<a href="<?php echo esc_url( $base . '&tab=design' ); ?>" class="nav-tab<?php echo 'design' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e( 'Design', 'oli-catalog-generator' ); ?></a>
 			</nav>
 
-			<?php if ( isset( $_GET['saved'] ) ) : ?>
+			<?php if ( isset( $_GET['saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice after the save redirect. ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'oli-catalog-generator' ); ?></p></div>
 			<?php endif; ?>
 
@@ -336,7 +339,7 @@ class OLICG_Admin {
 
 						<p>
 							<label for="olicg_added"><strong><?php esc_html_e( 'Add products manually', 'oli-catalog-generator' ); ?></strong></label><br>
-							<select id="olicg_added" name="olicg_added[]" class="wc-product-search" multiple="multiple" style="width:100%;" data-placeholder="<?php esc_attr_e( 'Search for a product…', 'oli-catalog-generator' ); ?>" data-action="woocommerce_json_search_products">
+							<select id="olicg_added" name="olicg_added[]" class="wc-product-search olicg-full" multiple="multiple" data-placeholder="<?php esc_attr_e( 'Search for a product…', 'oli-catalog-generator' ); ?>" data-action="woocommerce_json_search_products">
 								<?php foreach ( $added as $product_id ) : ?>
 									<?php $product = wc_get_product( $product_id ); ?>
 									<?php if ( $product ) : ?>
@@ -387,6 +390,8 @@ class OLICG_Admin {
 							<label><input type="checkbox" name="olicg_show_sku" value="1" <?php checked( $settings['show_sku'] ); ?>> <?php esc_html_e( 'SKU', 'oli-catalog-generator' ); ?></label>
 							<label><input type="checkbox" name="olicg_show_upc" value="1" <?php checked( $settings['show_upc'] ); ?>> <?php esc_html_e( 'UPC', 'oli-catalog-generator' ); ?></label>
 						</fieldset>
+
+						<?php self::render_sources( $settings ); ?>
 
 						<fieldset class="olicg-choice">
 							<legend><strong><?php esc_html_e( 'Layout', 'oli-catalog-generator' ); ?></strong></legend>
@@ -513,6 +518,46 @@ class OLICG_Admin {
 					<?php endif; ?>
 				</div>
 			</form>
+		<?php
+	}
+
+	/**
+	 * Where dealer costs, UPC and brand are read: ACF fields or any custom field.
+	 */
+	private static function render_sources( array $settings ) {
+		$acf_fields   = OLICG_Acf::product_fields();
+		$placeholders = array(
+			'cost_ca' => __( 'None — no dealer cost', 'oli-catalog-generator' ),
+			'cost_us' => __( 'None — no dealer cost', 'oli-catalog-generator' ),
+			'upc'     => __( 'Automatic — WooCommerce GTIN, then common barcode fields', 'oli-catalog-generator' ),
+			'brand'   => __( 'Automatic — Brands taxonomy or “brand” attribute', 'oli-catalog-generator' ),
+		);
+		?>
+		<details class="olicg-choice olicg-sources"<?php echo OLICG_Catalog::default_fields() !== $settings['fields'] ? ' open' : ''; ?>>
+			<summary><strong><?php esc_html_e( 'Data sources (ACF / custom fields)', 'oli-catalog-generator' ); ?></strong></summary>
+			<p class="description">
+				<?php
+				echo esc_html(
+					OLICG_Acf::is_active()
+						? __( 'Type or pick the ACF field name (products or variations) or any custom field key. ACF fields of your product field groups are suggested.', 'oli-catalog-generator' )
+						: __( 'Type the custom field key (meta key) used on products and variations. With Advanced Custom Fields active, your product fields are suggested here.', 'oli-catalog-generator' )
+				);
+				?>
+			</p>
+			<?php foreach ( OLICG_Catalog::field_labels() as $key => $label ) : ?>
+				<label><?php echo esc_html( $label ); ?><br>
+					<input type="text" class="regular-text code" name="olicg_fields[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $settings['fields'][ $key ] ); ?>" placeholder="<?php echo esc_attr( $placeholders[ $key ] ); ?>" list="olicg-product-fields" autocomplete="off" spellcheck="false">
+				</label>
+			<?php endforeach; ?>
+			<datalist id="olicg-product-fields">
+				<?php foreach ( $acf_fields as $name => $field_label ) : ?>
+					<option value="<?php echo esc_attr( $name ); ?>" label="<?php echo esc_attr( $field_label ); ?>"></option>
+				<?php endforeach; ?>
+				<?php foreach ( array_diff( array( '_dealer_cost_cad', '_dealer_cost_usd', '_gtin', '_upc', '_ean' ), array_keys( $acf_fields ) ) as $name ) : ?>
+					<option value="<?php echo esc_attr( $name ); ?>"></option>
+				<?php endforeach; ?>
+			</datalist>
+		</details>
 		<?php
 	}
 

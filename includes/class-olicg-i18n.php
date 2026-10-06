@@ -5,6 +5,8 @@
  *
  * Catalogue arrangements (order, removed products, image zoom) stay keyed by the
  * product IDs of the selected categories, so one arrangement serves every language.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -46,7 +48,7 @@ class OLICG_I18n {
 
 		switch ( self::provider() ) {
 			case 'wpml':
-				foreach ( (array) apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) ) as $code => $language ) {
+				foreach ( (array) apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) ) as $code => $language ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 					$languages[ $code ] = array(
 						'label'  => isset( $language['native_name'] ) ? $language['native_name'] : $code,
 						'locale' => ! empty( $language['default_locale'] ) ? $language['default_locale'] : $code,
@@ -84,7 +86,7 @@ class OLICG_I18n {
 	public static function default_language() {
 		switch ( self::provider() ) {
 			case 'wpml':
-				$code = apply_filters( 'wpml_default_language', null );
+				$code = apply_filters( 'wpml_default_language', null ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 				break;
 			case 'polylang':
 				$code = pll_default_language();
@@ -117,16 +119,23 @@ class OLICG_I18n {
 	}
 
 	/**
-	 * Extra WP_Query args so product queries aren't limited to the admin's current language.
+	 * Post IDs from a WP_Query that isn't limited to the admin's current language.
+	 *
+	 * @return int[]|WP_Post[]
 	 */
-	public static function query_args() {
-		switch ( self::provider() ) {
-			case 'wpml':
-				return array( 'suppress_filters' => true );
-			case 'polylang':
-				return array( 'lang' => '' );
+	public static function query_all_languages( array $args ) {
+		$previous = null;
+		if ( 'wpml' === self::provider() ) {
+			$previous = apply_filters( 'wpml_current_language', null ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
+			do_action( 'wpml_switch_language', 'all' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
+		} elseif ( 'polylang' === self::provider() ) {
+			$args['lang'] = '';
 		}
-		return array();
+		$query = new WP_Query( $args );
+		if ( null !== $previous ) {
+			do_action( 'wpml_switch_language', $previous ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
+		}
+		return $query->posts;
 	}
 
 	/**
@@ -139,7 +148,7 @@ class OLICG_I18n {
 		}
 		switch ( self::provider() ) {
 			case 'wpml':
-				$translated = (int) apply_filters( 'wpml_object_id', $post_id, $post_type, true, $lang );
+				$translated = (int) apply_filters( 'wpml_object_id', $post_id, $post_type, true, $lang ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 				break;
 			case 'polylang':
 				$translated = function_exists( 'pll_get_post' ) ? (int) pll_get_post( $post_id, $lang ) : 0;
@@ -157,7 +166,7 @@ class OLICG_I18n {
 		}
 		switch ( self::provider() ) {
 			case 'wpml':
-				$translated = (int) apply_filters( 'wpml_object_id', $term_id, $taxonomy, true, $lang );
+				$translated = (int) apply_filters( 'wpml_object_id', $term_id, $taxonomy, true, $lang ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 				break;
 			case 'polylang':
 				$translated = function_exists( 'pll_get_term' ) ? (int) pll_get_term( $term_id, $lang ) : 0;
@@ -181,8 +190,8 @@ class OLICG_I18n {
 
 		switch ( $state['provider'] ) {
 			case 'wpml':
-				$state['previous'] = apply_filters( 'wpml_current_language', null );
-				do_action( 'wpml_switch_language', $lang );
+				$state['previous'] = apply_filters( 'wpml_current_language', null ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
+				do_action( 'wpml_switch_language', $lang ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 				break;
 			case 'polylang':
 				if ( function_exists( 'PLL' ) && isset( PLL()->model ) ) {
@@ -222,7 +231,7 @@ class OLICG_I18n {
 			restore_previous_locale();
 		}
 		if ( 'wpml' === $state['provider'] && null !== $state['previous'] ) {
-			do_action( 'wpml_switch_language', $state['previous'] );
+			do_action( 'wpml_switch_language', $state['previous'] ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 		} elseif ( 'polylang' === $state['provider'] && function_exists( 'PLL' ) ) {
 			PLL()->curlang = $state['previous'];
 		}
@@ -263,7 +272,7 @@ class OLICG_I18n {
 	 */
 	public static function register_string( $name, $value ) {
 		if ( is_string( $value ) && '' !== $value ) {
-			do_action( 'wpml_register_single_string', self::DOMAIN, $name, $value );
+			do_action( 'wpml_register_single_string', self::DOMAIN, $name, $value ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 		}
 	}
 
@@ -276,7 +285,7 @@ class OLICG_I18n {
 		}
 		switch ( self::provider() ) {
 			case 'wpml':
-				$value = apply_filters( 'wpml_translate_single_string', $value, self::DOMAIN, $name, $lang );
+				$value = apply_filters( 'wpml_translate_single_string', $value, self::DOMAIN, $name, $lang ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML API.
 				break;
 			case 'polylang':
 				if ( null === $lang && function_exists( 'pll__' ) ) {

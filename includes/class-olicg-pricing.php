@@ -4,8 +4,10 @@
  *
  * End-user price: lowest of regular / sale (regular = list, sale = MAP; when only
  * one exists, that one). Canada reads the base CAD prices, US reads the Price
- * Based on Countries USD zone. Dealer price: _dealer_cost_cad / _dealer_cost_usd
- * (imported by WP All Import).
+ * Based on Countries USD zone. Dealer price: the ACF / custom fields chosen in the
+ * Catalog tab (default _dealer_cost_cad / _dealer_cost_usd).
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -130,8 +132,8 @@ class OLICG_Pricing {
 
 	public static function get_single_component( $post_id, $region, $component ) {
 		if ( 'cost' === $component ) {
-			$keys = apply_filters( 'olicg_dealer_meta_keys', array( 'ca' => '_dealer_cost_cad', 'us' => '_dealer_cost_usd' ) );
-			return self::lowest( array( get_post_meta( $post_id, $keys[ $region ], true ) ) );
+			$keys = apply_filters( 'olicg_dealer_meta_keys', array( 'ca' => OLICG_Catalog::field( 'cost_ca' ), 'us' => OLICG_Catalog::field( 'cost_us' ) ) );
+			return empty( $keys[ $region ] ) ? null : self::lowest( array( get_post_meta( $post_id, $keys[ $region ], true ) ) );
 		}
 
 		$regular = 'us' === $region ? self::us_price( $post_id, '_regular_price' ) : get_post_meta( $post_id, '_regular_price', true );

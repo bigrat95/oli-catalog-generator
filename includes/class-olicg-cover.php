@@ -2,6 +2,8 @@
 /**
  * Catalogue cover page: designed cover (editable texts, logo, colours, background)
  * or one full-page image.
+ *
+ * @package OliCatalogGenerator
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -17,6 +19,7 @@ class OLICG_Cover {
 			'image_fit'    => 'cover',
 			'show_logo'    => 1,
 			'logo_url'     => '',
+			'logo_acf'     => 'site_logo',
 			'logo_height'  => 54,
 			'bg_color'     => '',
 			'bg_image_url' => '',
@@ -246,7 +249,7 @@ class OLICG_Cover {
 			delete_option( self::OPTION );
 		} else {
 			$post = static function ( $key ) {
-				return isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized per field below.
+				return isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- sanitized per field below; nonce checked above.
 			};
 			$mode     = sanitize_key( $post( 'olicg_cover_mode' ) );
 			$fit      = sanitize_key( $post( 'olicg_cover_image_fit' ) );
@@ -268,6 +271,7 @@ class OLICG_Cover {
 				'image_fit'    => 'contain' === $fit ? 'contain' : 'cover',
 				'show_logo'    => '' === $post( 'olicg_cover_show_logo' ) ? 0 : 1,
 				'logo_url'     => esc_url_raw( $post( 'olicg_cover_logo_url' ) ),
+				'logo_acf'     => OLICG_Acf::sanitize_name( $post( 'olicg_cover_logo_acf' ) ),
 				'logo_height'  => max( 20, min( 200, absint( $post( 'olicg_cover_logo_height' ) ) ) ),
 				'bg_color'     => (string) sanitize_hex_color( $post( 'olicg_cover_bg_color' ) ),
 				'bg_image_url' => esc_url_raw( $post( 'olicg_cover_bg_image_url' ) ),
@@ -309,6 +313,36 @@ class OLICG_Cover {
 				<p class="description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Site logo source when no logo is chosen above: an ACF options field, else the theme's custom logo.
+	 */
+	private static function logo_source_field( array $s ) {
+		$fields = OLICG_Acf::option_image_fields();
+		if ( '' !== $s['logo_acf'] && ! isset( $fields[ $s['logo_acf'] ] ) ) {
+			$fields[ $s['logo_acf'] ] = $s['logo_acf'];
+		}
+		?>
+		<p>
+			<label for="olicg_cover_logo_acf"><strong><?php esc_html_e( 'Site logo from ACF', 'oli-catalog-generator' ); ?></strong></label><br>
+			<select id="olicg_cover_logo_acf" name="olicg_cover_logo_acf">
+				<option value="" <?php selected( $s['logo_acf'], '' ); ?>><?php esc_html_e( 'None — use the theme logo (Customizer / Site Editor)', 'oli-catalog-generator' ); ?></option>
+				<?php foreach ( $fields as $name => $label ) : ?>
+					<option value="<?php echo esc_attr( $name ); ?>" <?php selected( $s['logo_acf'], $name ); ?>><?php echo esc_html( $label === $name ? $name : $label . ' (' . $name . ')' ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<br><span class="description">
+				<?php
+				echo esc_html(
+					OLICG_Acf::is_active()
+						? __( 'Image or URL field of an ACF options page, used when the Logo field above is empty (also for the product PDF sheet). Falls back to the theme logo.', 'oli-catalog-generator' )
+						: __( 'Advanced Custom Fields is not active: the theme logo is used. With ACF, pick the logo field of your options page here.', 'oli-catalog-generator' )
+				);
+				?>
+			</span>
+		</p>
 		<?php
 	}
 
@@ -365,7 +399,9 @@ class OLICG_Cover {
 
 					<h3><?php esc_html_e( 'Logo', 'oli-catalog-generator' ); ?></h3>
 					<p><label><input type="checkbox" name="olicg_cover_show_logo" value="1" <?php checked( $s['show_logo'] ); ?>> <?php esc_html_e( 'Show the logo (or the company name when there is no logo)', 'oli-catalog-generator' ); ?></label></p>
-					<?php self::media_field( 'olicg_cover_logo_url', $s['logo_url'], __( 'Logo', 'oli-catalog-generator' ), sprintf( /* translators: %s: logo URL used when empty */ __( 'Leave empty to use the site logo (%s).', 'oli-catalog-generator' ), OLICG_Catalog::logo_url( $catalog, false ) ? OLICG_Catalog::logo_url( $catalog, false ) : __( 'none found', 'oli-catalog-generator' ) ) ); ?>
+					<?php $olicg_site_logo = OLICG_Catalog::logo_url( false ); ?>
+					<?php self::media_field( 'olicg_cover_logo_url', $s['logo_url'], __( 'Logo', 'oli-catalog-generator' ), sprintf( /* translators: %s: logo URL used when empty */ __( 'Leave empty to use the site logo (%s).', 'oli-catalog-generator' ), $olicg_site_logo ? $olicg_site_logo : __( 'none found', 'oli-catalog-generator' ) ) ); ?>
+					<?php self::logo_source_field( $s ); ?>
 					<p>
 						<label><?php esc_html_e( 'Logo height (px)', 'oli-catalog-generator' ); ?>
 							<input type="number" name="olicg_cover_logo_height" min="20" max="200" step="1" class="small-text" value="<?php echo esc_attr( $s['logo_height'] ); ?>">
@@ -448,7 +484,7 @@ class OLICG_Cover {
 					<div class="olicg-actions">
 						<button type="submit" class="button button-primary"><?php esc_html_e( 'Save cover', 'oli-catalog-generator' ); ?></button>
 						<a class="button" href="<?php echo esc_url( OLICG_Admin::render_url( $catalog['region'], null, $catalog['language'] ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Preview catalogue', 'oli-catalog-generator' ); ?></a>
-						<button type="submit" class="button-link" name="olicg_cover_reset" value="1" onclick="return confirm('<?php echo esc_js( __( 'Reset the cover to the defaults?', 'oli-catalog-generator' ) ); ?>');"><?php esc_html_e( 'Reset to defaults', 'oli-catalog-generator' ); ?></button>
+						<button type="submit" class="button-link" name="olicg_cover_reset" value="1" data-olicg-confirm="<?php esc_attr_e( 'Reset the cover to the defaults?', 'oli-catalog-generator' ); ?>"><?php esc_html_e( 'Reset to defaults', 'oli-catalog-generator' ); ?></button>
 					</div>
 				</div>
 			</div>
