@@ -461,17 +461,25 @@ class OLICG_Admin {
 							</fieldset>
 						<?php endif; ?>
 
-						<fieldset class="olicg-choice">
+						<fieldset class="olicg-choice olicg-prices">
 							<legend><strong><?php esc_html_e( 'Prices shown', 'oli-catalog-generator' ); ?></strong></legend>
-							<?php $olicg_default_labels = OLICG_Pricing::all_components(); ?>
-							<?php foreach ( OLICG_Pricing::component_descriptions() as $key => $label ) : ?>
-								<div class="olicg-price-choice">
-									<label><input type="checkbox" name="olicg_prices[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['prices'], true ) ); ?>> <?php echo esc_html( $label ); ?></label>
-									<input type="text" class="olicg-price-label" name="olicg_price_labels[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( isset( $settings['price_labels'][ $key ] ) ? $settings['price_labels'][ $key ] : '' ); ?>" placeholder="<?php echo esc_attr( $olicg_default_labels[ $key ] ); ?>" title="<?php esc_attr_e( 'Label printed in the catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: default price label, e.g. Cost */ __( 'Label printed for “%s”', 'oli-catalog-generator' ), $olicg_default_labels[ $key ] ) ); ?>">
-								</div>
-							<?php endforeach; ?>
 							<p class="description"><?php esc_html_e( 'Tick any combination — each ticked price gets its own line on every product. Leave all unticked for a catalogue without prices.', 'oli-catalog-generator' ); ?></p>
-							<p class="description"><?php esc_html_e( 'The box next to each price is the label printed in the catalogue (e.g. “Dealer”, “MSRP”, “Street”). Leave it empty to use the default shown in grey.', 'oli-catalog-generator' ); ?></p>
+							<?php foreach ( OLICG_Pricing::all_components() as $olicg_price_key => $olicg_price_label ) : ?>
+								<label class="olicg-price-tick">
+									<input type="checkbox" name="olicg_prices[]" value="<?php echo esc_attr( $olicg_price_key ); ?>" <?php checked( in_array( $olicg_price_key, $settings['prices'], true ) ); ?>>
+									<?php echo esc_html( $olicg_price_label ); ?>
+								</label>
+							<?php endforeach; ?>
+							<p class="description olicg-prices-meaning"><?php esc_html_e( 'Cost = dealer cost (Data sources). List = regular price. MAP = sale price. End-user = lowest of List and MAP.', 'oli-catalog-generator' ); ?></p>
+							<details class="olicg-price-labels"<?php echo $settings['price_labels'] ? ' open' : ''; ?>>
+								<summary><?php esc_html_e( 'Custom labels printed in the catalogue (optional)', 'oli-catalog-generator' ); ?></summary>
+								<?php foreach ( OLICG_Pricing::all_components() as $olicg_price_key => $olicg_price_label ) : ?>
+									<label class="olicg-price-label-row"><?php echo esc_html( $olicg_price_label ); ?>
+										<input type="text" class="olicg-price-label" name="olicg_price_labels[<?php echo esc_attr( $olicg_price_key ); ?>]" value="<?php echo esc_attr( isset( $settings['price_labels'][ $olicg_price_key ] ) ? $settings['price_labels'][ $olicg_price_key ] : '' ); ?>" placeholder="<?php echo esc_attr( $olicg_price_label ); ?>" title="<?php esc_attr_e( 'Label printed in the catalogue', 'oli-catalog-generator' ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: default price label, e.g. Cost */ __( 'Label printed for “%s”', 'oli-catalog-generator' ), $olicg_price_label ) ); ?>">
+									</label>
+								<?php endforeach; ?>
+								<p class="description"><?php esc_html_e( 'Leave empty to use the default (e.g. “Dealer”, “MSRP”, “Street”).', 'oli-catalog-generator' ); ?></p>
+							</details>
 						</fieldset>
 
 						<fieldset class="olicg-choice">

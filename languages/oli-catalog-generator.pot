@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Oli Catalog & Product PDF 1.15.0\n"
+"Project-Id-Version: Oli Catalog & Product PDF 1.15.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/oli-catalog-generator\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T21:06:09+00:00\n"
+"POT-Creation-Date: 2026-10-06T22:22:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: oli-catalog-generator\n"
@@ -69,26 +69,26 @@ msgid "Category"
 msgstr ""
 
 #: includes/class-olicg-admin.php:294
-#: includes/class-olicg-admin.php:576
+#: includes/class-olicg-admin.php:584
 msgid "Product"
 msgstr ""
 
 #: includes/class-olicg-admin.php:295
-#: includes/class-olicg-admin.php:481
-#: includes/class-olicg-admin.php:577
+#: includes/class-olicg-admin.php:489
+#: includes/class-olicg-admin.php:585
 #: includes/class-olicg-catalog.php:52
 #: templates/catalog.php:275
 msgid "SKU"
 msgstr ""
 
 #: includes/class-olicg-admin.php:296
-#: includes/class-olicg-admin.php:482
+#: includes/class-olicg-admin.php:490
 #: templates/catalog.php:278
 msgid "UPC"
 msgstr ""
 
 #: includes/class-olicg-admin.php:297
-#: includes/class-olicg-admin.php:480
+#: includes/class-olicg-admin.php:488
 #: includes/class-olicg-catalog.php:82
 #: templates/catalog.php:281
 msgid "Brand"
@@ -187,186 +187,194 @@ msgstr ""
 msgid "Prices shown"
 msgstr ""
 
-#: includes/class-olicg-admin.php:470
+#: includes/class-olicg-admin.php:466
+msgid "Tick any combination — each ticked price gets its own line on every product. Leave all unticked for a catalogue without prices."
+msgstr ""
+
+#: includes/class-olicg-admin.php:473
+msgid "Cost = dealer cost (Data sources). List = regular price. MAP = sale price. End-user = lowest of List and MAP."
+msgstr ""
+
+#: includes/class-olicg-admin.php:475
+msgid "Custom labels printed in the catalogue (optional)"
+msgstr ""
+
+#: includes/class-olicg-admin.php:478
 msgid "Label printed in the catalogue"
 msgstr ""
 
 #. translators: %s: default price label, e.g. Cost
-#: includes/class-olicg-admin.php:470
+#: includes/class-olicg-admin.php:478
 msgid "Label printed for “%s”"
 msgstr ""
 
-#: includes/class-olicg-admin.php:473
-msgid "Tick any combination — each ticked price gets its own line on every product. Leave all unticked for a catalogue without prices."
+#: includes/class-olicg-admin.php:481
+msgid "Leave empty to use the default (e.g. “Dealer”, “MSRP”, “Street”)."
 msgstr ""
 
-#: includes/class-olicg-admin.php:474
-msgid "The box next to each price is the label printed in the catalogue (e.g. “Dealer”, “MSRP”, “Street”). Leave it empty to use the default shown in grey."
-msgstr ""
-
-#: includes/class-olicg-admin.php:478
+#: includes/class-olicg-admin.php:486
 msgid "Product details shown"
 msgstr ""
 
-#: includes/class-olicg-admin.php:479
+#: includes/class-olicg-admin.php:487
 msgid "Image"
 msgstr ""
 
-#: includes/class-olicg-admin.php:483
+#: includes/class-olicg-admin.php:491
 msgid "Link product names to their page (clickable PDF)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:489
-#: includes/class-olicg-admin.php:496
+#: includes/class-olicg-admin.php:497
+#: includes/class-olicg-admin.php:504
 msgid "Layout"
 msgstr ""
 
-#: includes/class-olicg-admin.php:490
+#: includes/class-olicg-admin.php:498
 msgid "Paper"
 msgstr ""
 
-#: includes/class-olicg-admin.php:492
+#: includes/class-olicg-admin.php:500
 msgid "Letter (8.5 × 11 in)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:493
+#: includes/class-olicg-admin.php:501
 msgid "A4"
 msgstr ""
 
-#: includes/class-olicg-admin.php:503
+#: includes/class-olicg-admin.php:511
 msgid "Products per row (grids) / pictures per row (price list)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:510
+#: includes/class-olicg-admin.php:518
 msgid "Sort products by"
 msgstr ""
 
-#: includes/class-olicg-admin.php:517
+#: includes/class-olicg-admin.php:525
 msgid "Products you drag into place keep their position."
 msgstr ""
 
-#: includes/class-olicg-admin.php:518
+#: includes/class-olicg-admin.php:526
 msgid "Start each category on a new page"
 msgstr ""
 
-#: includes/class-olicg-admin.php:519
+#: includes/class-olicg-admin.php:527
 msgid "Hide products without any of the chosen prices"
 msgstr ""
 
-#: includes/class-olicg-admin.php:520
+#: includes/class-olicg-admin.php:528
 msgid "Hide out-of-stock products"
 msgstr ""
 
 #. translators: %s: link to the Cover page tab
-#: includes/class-olicg-admin.php:527
+#: includes/class-olicg-admin.php:535
 msgid "Logo, cover texts, cover image, background, footer and page numbers: %s."
 msgstr ""
 
-#: includes/class-olicg-admin.php:528
+#: includes/class-olicg-admin.php:536
 msgid "Cover & pages tab"
 msgstr ""
 
-#: includes/class-olicg-admin.php:534
+#: includes/class-olicg-admin.php:542
 msgid "Save selection"
 msgstr ""
 
-#: includes/class-olicg-admin.php:535
+#: includes/class-olicg-admin.php:543
 msgid "Save & generate catalogue"
 msgstr ""
 
-#: includes/class-olicg-admin.php:536
+#: includes/class-olicg-admin.php:544
 msgid "Save & download spreadsheet (CSV)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:539
+#: includes/class-olicg-admin.php:547
 msgid "Quick generate (saved selection):"
 msgstr ""
 
-#: includes/class-olicg-admin.php:547
+#: includes/class-olicg-admin.php:555
 msgid "Download as a spreadsheet (CSV)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:547
+#: includes/class-olicg-admin.php:555
 msgid "CSV"
 msgstr ""
 
 #. translators: 1: included products, 2: listed products
-#: includes/class-olicg-admin.php:559
+#: includes/class-olicg-admin.php:567
 msgid "3. Products — %1$d of %2$d included"
 msgstr ""
 
-#: includes/class-olicg-admin.php:562
+#: includes/class-olicg-admin.php:570
 msgid "Filter by name or SKU…"
 msgstr ""
 
-#: includes/class-olicg-admin.php:564
+#: includes/class-olicg-admin.php:572
 msgid "Drag the ⋮⋮ handle to change the order within a category. Hover a product and click × (or uncheck it) to remove it. You can also rearrange and remove products directly on the generated catalogue. Prices below are what each edition would print."
 msgstr ""
 
-#: includes/class-olicg-admin.php:568
+#: includes/class-olicg-admin.php:576
 msgid "No products yet — select categories or add products, then save."
 msgstr ""
 
-#: includes/class-olicg-admin.php:578
+#: includes/class-olicg-admin.php:586
 msgid "CAD end-user"
 msgstr ""
 
-#: includes/class-olicg-admin.php:579
+#: includes/class-olicg-admin.php:587
 msgid "CAD dealer"
 msgstr ""
 
-#: includes/class-olicg-admin.php:580
+#: includes/class-olicg-admin.php:588
 msgid "USD end-user"
 msgstr ""
 
-#: includes/class-olicg-admin.php:581
+#: includes/class-olicg-admin.php:589
 msgid "USD dealer"
 msgstr ""
 
-#: includes/class-olicg-admin.php:593
+#: includes/class-olicg-admin.php:601
 msgid "Drag to reorder"
 msgstr ""
 
-#: includes/class-olicg-admin.php:599
+#: includes/class-olicg-admin.php:607
 msgid "Added manually"
 msgstr ""
 
-#: includes/class-olicg-admin.php:608
+#: includes/class-olicg-admin.php:616
 msgid "Manual"
 msgstr ""
 
-#: includes/class-olicg-admin.php:609
+#: includes/class-olicg-admin.php:617
 #: templates/catalog.php:321
 #: templates/catalog.php:366
 msgid "Remove from catalogue"
 msgstr ""
 
-#: includes/class-olicg-admin.php:632
-#: includes/class-olicg-admin.php:633
+#: includes/class-olicg-admin.php:640
+#: includes/class-olicg-admin.php:641
 msgid "None — no dealer cost"
 msgstr ""
 
-#: includes/class-olicg-admin.php:634
+#: includes/class-olicg-admin.php:642
 msgid "Automatic — WooCommerce GTIN, then common barcode fields"
 msgstr ""
 
-#: includes/class-olicg-admin.php:635
+#: includes/class-olicg-admin.php:643
 msgid "Automatic — Brands taxonomy or “brand” attribute"
 msgstr ""
 
-#: includes/class-olicg-admin.php:639
+#: includes/class-olicg-admin.php:647
 msgid "Data sources (ACF / custom fields)"
 msgstr ""
 
-#: includes/class-olicg-admin.php:644
+#: includes/class-olicg-admin.php:652
 msgid "Type or pick the ACF field name (products or variations) or any custom field key. ACF fields of your product field groups are suggested."
 msgstr ""
 
-#: includes/class-olicg-admin.php:645
+#: includes/class-olicg-admin.php:653
 msgid "Type the custom field key (meta key) used on products and variations. With Advanced Custom Fields active, your product fields are suggested here."
 msgstr ""
 
-#: includes/class-olicg-admin.php:682
+#: includes/class-olicg-admin.php:690
 #: includes/class-olicg-catalog.php:281
 msgid "Other products"
 msgstr ""

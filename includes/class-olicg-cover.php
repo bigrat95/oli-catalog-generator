@@ -97,8 +97,8 @@ class OLICG_Cover {
 			'subtitle'    => '{year}',
 			'band1_label' => __( 'Market', 'oli-catalog-generator' ),
 			'band1_value' => '{market}',
-			'band2_label' => __( 'Prices', 'oli-catalog-generator' ),
-			'band2_value' => '{prices} · {currency}',
+			'band2_label' => '',
+			'band2_value' => '',
 			'band3_label' => __( 'Products', 'oli-catalog-generator' ),
 			'band3_value' => '{count}',
 			'note'        => '{note}',
@@ -125,6 +125,19 @@ class OLICG_Cover {
 			'{page}'          => __( 'page number (footer and page number only)', 'oli-catalog-generator' ),
 			'{pages}'         => __( 'total number of pages, cover included (footer and page number only)', 'oli-catalog-generator' ),
 		);
+	}
+
+	/**
+	 * Omit cover band box 2 when empty or when it only repeats price labels (shown in the eyebrow).
+	 */
+	public static function skip_band2( array $cover ) {
+		$texts = is_array( $cover['texts'] ?? null ) ? $cover['texts'] : array();
+		$label = trim( (string) ( $texts['band2_label'] ?? '' ) );
+		$value = trim( (string) ( $texts['band2_value'] ?? '' ) );
+		if ( '' === $label && '' === $value ) {
+			return true;
+		}
+		return '' !== $value && false !== strpos( $value, '{prices}' );
 	}
 
 	public static function get_settings() {

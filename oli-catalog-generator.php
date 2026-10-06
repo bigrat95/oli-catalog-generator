@@ -3,7 +3,7 @@
  * Plugin Name: Oli Catalog & Product PDF
  * Plugin URI: https://github.com/bigrat95/oli-catalog-generator
  * Description: Build private, print-ready product catalogues from WooCommerce categories (Canada / US editions, dealer or retail prices, price list tables), plus an optional "Download PDF" product sheet. Works with ACF.
- * Version: 1.15.0
+ * Version: 1.15.2
  * Requires at least: 6.5
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -23,7 +23,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'OLICG_VERSION', '1.15.0' );
+define( 'OLICG_VERSION', '1.15.2' );
 define( 'OLICG_FILE', __FILE__ );
 define( 'OLICG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLICG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -82,6 +82,17 @@ function olicg_maybe_upgrade() {
 		if ( ! isset( $design['font_source'] ) ) {
 			$design['font_source'] = 'google';
 			update_option( OLICG_Design::OPTION, $design, false );
+		}
+	}
+	if ( version_compare( '' !== $installed ? $installed : '0', '1.15.2', '<' ) ) {
+		$cover = get_option( OLICG_Cover::OPTION, array() );
+		if ( is_array( $cover ) && OLICG_Cover::skip_band2( $cover ) ) {
+			if ( ! isset( $cover['texts'] ) || ! is_array( $cover['texts'] ) ) {
+				$cover['texts'] = array();
+			}
+			$cover['texts']['band2_label'] = '';
+			$cover['texts']['band2_value'] = '';
+			update_option( OLICG_Cover::OPTION, $cover, false );
 		}
 	}
 	update_option( 'olicg_version', OLICG_VERSION );

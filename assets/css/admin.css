@@ -9,9 +9,12 @@
 .olicg-choice { margin: 0 0 16px; }
 .olicg-choice label { display: block; margin: 6px 0; }
 .olicg-choice select { margin-left: 6px; }
-.olicg-price-choice { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 460px; }
-.olicg-price-choice label { flex: 1; }
-.olicg-price-label { width: 10em; }
+.olicg-prices .olicg-price-tick { display: block; margin: 6px 0; }
+.olicg-prices-meaning { margin-top: 4px; }
+.olicg-price-labels { margin: 10px 0 0; }
+.olicg-price-labels summary { cursor: pointer; margin-bottom: 8px; }
+.olicg-price-label-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 460px; margin: 6px 0; }
+.olicg-price-label { width: 10em; max-width: 100%; }
 .olicg .olicg-full,
 .olicg .olicg-full + .select2-container { width: 100% !important; }
 .olicg-sources summary { cursor: pointer; margin-bottom: 6px; }

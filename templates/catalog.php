@@ -97,8 +97,8 @@ $olicg_cover_text = static function ( $key ) use ( $olicg_cover_texts, $olicg_co
 };
 $olicg_band = array();
 foreach ( array( 1, 2, 3 ) as $olicg_n ) {
-	// Without prices the automatic "Prices" box has nothing to say.
-	if ( 2 === $olicg_n && ! $olicg_components && empty( $olicg_cover['texts']['band2_value'] ) ) {
+	// Middle band box is optional; skip the old default “Prices · CAD” line (edition is already in the eyebrow).
+	if ( 2 === $olicg_n && OLICG_Cover::skip_band2( $olicg_cover ) ) {
 		continue;
 	}
 	$olicg_box = array( $olicg_cover_text( 'band' . $olicg_n . '_label' ), $olicg_cover_text( 'band' . $olicg_n . '_value' ) );

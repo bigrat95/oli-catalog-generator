@@ -4,7 +4,7 @@ Tags: woocommerce, catalog, pdf, product sheet, acf
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.15.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,12 @@ The plugin does not collect personal data and does not send data to a third part
 
 == Changelog ==
 
+= 1.15.2 =
+* Cover: removed the middle “Prices” band box (Cost · List · MAP clutter); market and product count remain. You can still add a custom band box 2 in Cover & pages
+
+= 1.15.1 =
+* Catalog tab: “Prices shown” uses four checkboxes (Cost, List, MAP, End-user) — tick any combination; optional custom labels in a collapsible panel
+
 = 1.15.0 =
 * New: spreadsheet export (CSV) of any edition and language — same products, order and prices as the catalogue
 * New: clickable PDF — optional links from product names to their page, in the catalogue's language
@@ -172,6 +178,9 @@ The plugin does not collect personal data and does not send data to a third part
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.15.2 =
+Cover band no longer lists every price type; clearer Catalog price checkboxes (1.15.1).
 
 = 1.15.0 =
 Spreadsheet (CSV) export, clickable PDF links and product sort options.
